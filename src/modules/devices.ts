@@ -58,7 +58,7 @@ export class DevicesModule {
       }
     `;
     const response = await this.client.request(query, { name }) as { devices: { page: { edges: { node: Device }[] } } };
-    return response.devices.page.edges.map((edge: any) => edge.node);
+    return response.devices.page.edges.map((edge) => edge.node);
   }
 
   async getById(id: string): Promise<Device> {
