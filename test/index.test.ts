@@ -70,4 +70,4 @@ describe('OptiSignsSDK', () => {
       expect(sdk.devices.pushContent).toBeDefined();
     });
   });
-});
+}); 

@@ -35,7 +35,7 @@ describe('DevicesModule', () => {
             edges: [mockDevicesList.devices.page.edges[0]]
           }
         }
-      });
+      }); 
       
       const devices = await devicesModule.findByName(deviceName);
       expect(devices[0].deviceName).toBe(deviceName);

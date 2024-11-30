@@ -8,3 +8,4 @@ const MockGraphQLClient = jest.fn().mockImplementation(() => ({
 }));
 
 export { MockGraphQLClient as GraphQLClient };
+ 

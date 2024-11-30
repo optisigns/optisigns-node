@@ -77,7 +77,7 @@ export class DevicesModule {
       }
     `;
     const response = await this.client.request(query, { id }) as { device: Device };
-    return response.device;
+    return response.device; 
   }
 
   async update(id: string, data: DeviceUpdateInput): Promise<Device> {

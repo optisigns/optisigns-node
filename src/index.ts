@@ -19,7 +19,7 @@ export class OptiSignsSDK {
     }
 
     this.client = new GraphQLClient(endpoint, {
-      headers: {
+      headers: { 
         authorization: `Bearer ${config.token}`,
       },
     });

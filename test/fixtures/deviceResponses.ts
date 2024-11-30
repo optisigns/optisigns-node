@@ -36,7 +36,7 @@ export const mockDevicesList = {
             UUID: "uuid-1",
             pairingCode: "pair-1",
             currentType: "DISPLAY",
-            currentAssetId: "asset-1",
+            currentAssetId: "asset-1", 
             currentPlaylistId: "playlist-1",
             localAppVersion: "1.0.0"
           }
