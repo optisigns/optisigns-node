@@ -54,7 +54,9 @@ export class DevicesModule {
   // Add custom error class at the top of the class
   private handleGraphQLError(error: any, operation: string): never {
     if (error.response?.errors?.[0]?.message) {
-      throw new Error(`Failed to ${operation}: ${error.response.errors[0].message}`);
+      throw new Error(
+        `Failed to ${operation}: ${error.response.errors[0].message}`
+      );
     }
     throw new Error(`Failed to ${operation}`);
   }
@@ -86,7 +88,7 @@ export class DevicesModule {
       }>(query);
       return response.devices.page.edges.map((edge) => edge.node);
     } catch (error: any) {
-      throw this.handleGraphQLError(error, 'fetch devices');
+      throw this.handleGraphQLError(error, "fetch devices");
     }
   }
 
@@ -112,37 +114,47 @@ export class DevicesModule {
       }
     `;
     try {
-      const response = await this.client.request(query, { name }) as {
+      const response = (await this.client.request(query, { name })) as {
         devices: { page: { edges: { node: Device }[] } };
       };
       return response.devices.page.edges.map((edge) => edge.node);
     } catch (error: any) {
-      throw this.handleGraphQLError(error, 'find device by name');
+      throw this.handleGraphQLError(error, "find device by name");
     }
   }
 
   async getDeviceById(id: string): Promise<Device> {
     const query = `
       query($id: String!) {
-        device(id: $id) {
-          _id
-          deviceName
-          UUID
-          pairingCode
-          currentType
-          currentAssetId
-          currentPlaylistId
-          localAppVersion
+        devices(query: { _id: $id }) {
+          page {
+            edges {
+              node {
+                _id
+                deviceName
+                UUID
+                pairingCode
+                currentType
+                currentAssetId
+                currentPlaylistId
+                localAppVersion
+              }
+            }
+          }
         }
       }
     `;
     try {
-      const response = await this.client.request(query, { id }) as {
-        device: Device;
+      const response = (await this.client.request(query, { id })) as {
+        devices: { page: { edges: { node: Device }[] } };
       };
-      return response.device;
+      const devices = response.devices.page.edges.map((edge) => edge.node);
+      if (devices.length === 0) {
+        throw new Error(`Device with id ${id} not found`);
+      }
+      return devices[0];
     } catch (error: any) {
-      throw this.handleGraphQLError(error, 'get device by id');
+      throw this.handleGraphQLError(error, "get device by id");
     }
   }
 
@@ -187,13 +199,13 @@ export class DevicesModule {
           }
         }
       `;
-      const response = await this.client.request(mutation, {
+      const response = (await this.client.request(mutation, {
         _id: id,
         ...payload,
-      }) as { updateDevice: Device };
+      })) as { updateDevice: Device };
       return response.updateDevice;
     } catch (error: any) {
-      throw this.handleGraphQLError(error, 'update device');
+      throw this.handleGraphQLError(error, "update device");
     }
   }
 
@@ -206,7 +218,9 @@ export class DevicesModule {
     try {
       const existingDevice = await this.findByDeviceName(payload.deviceName);
       if (existingDevice) {
-        throw new Error(`Device with name ${payload.deviceName} already exists.`);
+        throw new Error(
+          `Device with name ${payload.deviceName} already exists.`
+        );
       }
 
       const mutation = `
@@ -236,17 +250,18 @@ export class DevicesModule {
           }
         }
       `;
-      const response = await this.client.request(mutation, payload) as {
+      const response = (await this.client.request(mutation, payload)) as {
         upsertDevice: Device;
       };
       return response.upsertDevice;
     } catch (error: any) {
-      throw this.handleGraphQLError(error, 'create device');
+      throw this.handleGraphQLError(error, "create device");
     }
   }
 
   /**
    * Notes - Cannot use deleteObjects mutation + this only works for unpairing not actual deletion
+   * TODO: Change to unpairDevices
    */
   async deleteDeviceById(id: string, teamId: string): Promise<boolean> {
     const mutation = `
@@ -265,7 +280,7 @@ export class DevicesModule {
 
       return response.unPairDevices; // Fix incorrect property name
     } catch (error: any) {
-      throw this.handleGraphQLError(error, 'delete device');
+      throw this.handleGraphQLError(error, "delete device");
     }
   }
 
@@ -276,12 +291,12 @@ export class DevicesModule {
       }
     `;
     try {
-      const response = await this.client.request(mutation, { id }) as {
+      const response = (await this.client.request(mutation, { id })) as {
         rebootDevice: boolean;
       };
       return response.rebootDevice;
     } catch (error: any) {
-      throw this.handleGraphQLError(error, 'reboot device');
+      throw this.handleGraphQLError(error, "reboot device");
     }
   }
 
@@ -304,17 +319,19 @@ export class DevicesModule {
       deviceIds: [deviceId],
       currentAssetId: contentId,
       type,
-      ...(type === "SCHEDULE" && scheduleTime && {
-        scheduleData: {
-          localTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          scheduleTime,
-        },
-      }),
-      ...(type === "TEMPORARILY" && scheduleMinutes && {
-        temporarilyFlashData: {
-          scheduleTimeMinutes: scheduleMinutes,
-        },
-      }),
+      ...(type === "SCHEDULE" &&
+        scheduleTime && {
+          scheduleData: {
+            localTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            scheduleTime,
+          },
+        }),
+      ...(type === "TEMPORARILY" &&
+        scheduleMinutes && {
+          temporarilyFlashData: {
+            scheduleTimeMinutes: scheduleMinutes,
+          },
+        }),
     };
 
     try {
@@ -325,10 +342,12 @@ export class DevicesModule {
         payload,
         teamId,
       });
-      
+
       return response.pushToScreens;
     } catch (error: any) {
-      throw this.handleGraphQLError(error, 'push content to device');
+      console.log(`PUSH CONTENT TO DEVICEERROR`);
+      console.error(error);
+      throw this.handleGraphQLError(error, "push content to device");
     }
   }
 }

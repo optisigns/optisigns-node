@@ -30,7 +30,7 @@ describe("OptiSignsSDK", () => {
   describe("initialization", () => {
     it("should initialize with default endpoint", () => {
       expect(GraphQLClient).toHaveBeenCalledWith(
-        "https://beta-graphql-gateway.optisigns.com/graphql",
+        "https://graphql-gateway.optisigns.com/graphql",
         {
           headers: {
             authorization: `Bearer ${mockToken}`,

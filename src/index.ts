@@ -15,7 +15,7 @@ export class OptiSignsSDK {
       throw new Error("Token is required");
     }
     const endpoint =
-      config.endpoint || "https://beta-graphql-gateway.optisigns.com/graphql";
+      config.endpoint || "https://graphql-gateway.optisigns.com/graphql";
 
     if (!this.isValidUrl(endpoint)) {
       throw new Error("Invalid endpoint URL");
