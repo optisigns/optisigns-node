@@ -66,23 +66,61 @@ describe("DevicesModule", () => {
     it("should update device successfully", async () => {
       const deviceId = "1";
       const updateData = { deviceName: "Updated Device" };
+      const existingDevice = mockDevicesList.devices.page.edges[0].node;
       const updatedDevice = {
-        ...mockDevicesList.devices.page.edges[0].node,
+        ...existingDevice,
         deviceName: "Updated Device",
       };
 
+      // Mock the getDeviceById request
+      mockClient.request.mockResolvedValueOnce({ device: existingDevice });
+      // Mock the updateDevice request
       mockClient.request.mockResolvedValueOnce({ updateDevice: updatedDevice });
 
       const result = await devicesModule.updateDevice(deviceId, updateData);
       expect(result.deviceName).toBe(updateData.deviceName);
     });
+
+    it("should handle errors when device does not exist", async () => {
+      const deviceId = "1";
+      const updateData = { deviceName: "Updated Device" };
+
+      // Mock the getDeviceById request to return null
+      mockClient.request.mockResolvedValueOnce({ device: null });
+
+      await expect(devicesModule.updateDevice(deviceId, updateData))
+        .rejects
+        .toThrow("Failed to update device");
+    });
+
+    it("should handle update errors", async () => {
+      const deviceId = "1";
+      const updateData = { deviceName: "Updated Device" };
+      const existingDevice = mockDevicesList.devices.page.edges[0].node;
+
+      // Mock the getDeviceById request
+      mockClient.request.mockResolvedValueOnce({ device: existingDevice });
+      // Mock the updateDevice request to fail
+      mockClient.request.mockRejectedValueOnce({
+        response: { errors: [{ message: "Update failed" }] }
+      });
+
+      await expect(devicesModule.updateDevice(deviceId, updateData))
+        .rejects
+        .toThrow("Failed to update device: Update failed");
+    });
   });
 
   describe("delete", () => {
     it("should delete device successfully", async () => {
-      mockClient.request.mockResolvedValueOnce({ deleteDevice: true });
+      mockClient.request.mockResolvedValueOnce({ deleteDevice: undefined });
       const result = await devicesModule.deleteDeviceById("1", "1");
-      expect(result).toBe(true);
+      expect(result).toBeUndefined();
+    });
+
+    it("should handle errors when deleting device", async () => {
+      mockClient.request.mockRejectedValueOnce(new Error("Delete failed"));
+      await expect(devicesModule.deleteDeviceById("1", "1")).rejects.toThrow();
     });
   });
 

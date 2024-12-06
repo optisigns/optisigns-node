@@ -51,13 +51,13 @@ export interface PushToScreensMutationInput {
 export class DevicesModule {
   constructor(private client: GraphQLClient) {}
 
-  // TODO: Update Screen
-
-  // {
-  //   code: 200
-  //   data: {}
-  //   error? extends Error
-  // }
+  // Add custom error class at the top of the class
+  private handleGraphQLError(error: any, operation: string): never {
+    if (error.response?.errors?.[0]?.message) {
+      throw new Error(`Failed to ${operation}: ${error.response.errors[0].message}`);
+    }
+    throw new Error(`Failed to ${operation}`);
+  }
 
   async listAllDevices(): Promise<Device[]> {
     const query = `
@@ -81,15 +81,12 @@ export class DevicesModule {
       }
     `;
     try {
-      const response = (await this.client.request(query)) as {
+      const response = await this.client.request<{
         devices: { page: { edges: { node: Device }[] } };
-      };
+      }>(query);
       return response.devices.page.edges.map((edge) => edge.node);
     } catch (error: any) {
-      if (error.response?.errors?.[0]?.message) {
-        throw new Error(error.response.errors[0].message);
-      }
-      throw error;
+      throw this.handleGraphQLError(error, 'fetch devices');
     }
   }
 
@@ -114,10 +111,14 @@ export class DevicesModule {
         }
       }
     `;
-    const response = (await this.client.request(query, { name })) as {
-      devices: { page: { edges: { node: Device }[] } };
-    };
-    return response.devices.page.edges.map((edge) => edge.node);
+    try {
+      const response = await this.client.request(query, { name }) as {
+        devices: { page: { edges: { node: Device }[] } };
+      };
+      return response.devices.page.edges.map((edge) => edge.node);
+    } catch (error: any) {
+      throw this.handleGraphQLError(error, 'find device by name');
+    }
   }
 
   async getDeviceById(id: string): Promise<Device> {
@@ -135,10 +136,14 @@ export class DevicesModule {
         }
       }
     `;
-    const response = (await this.client.request(query, { id })) as {
-      device: Device;
-    };
-    return response.device;
+    try {
+      const response = await this.client.request(query, { id }) as {
+        device: Device;
+      };
+      return response.device;
+    } catch (error: any) {
+      throw this.handleGraphQLError(error, 'get device by id');
+    }
   }
 
   async updateDevice(
@@ -150,50 +155,45 @@ export class DevicesModule {
       orientation?: "LANDSCAPE" | "PORTRAIT";
     }
   ): Promise<Device> {
-    // Check if the device exists
-    const existingDevice = await this.getDeviceById(id);
-    if (!existingDevice) {
-      throw new Error(`Device with id ${id} does not exist.`);
-    }
-
-    const mutation = `
-      mutation(
-        $_id: String!, 
-        $deviceName: String,
-        $currentType: MEDIA_TYPES,
-        $currentAssetId: String,
-        $orientation: ORIENTATION_TYPES
-      ) {
-        updateDevice(
-          _id: $_id, 
-          payload: {
-            deviceName: $deviceName,
-            currentType: $currentType,
-            currentAssetId: $currentAssetId,
-            orientation: $orientation
-          }
-        ) {
-          _id
-          deviceName
-          currentType
-          currentAssetId
-          orientation
-        }
-      }
-    `;
     try {
-      const response = (await this.client.request(mutation, {
+      // Check if the device exists
+      const existingDevice = await this.getDeviceById(id);
+      if (!existingDevice) {
+        throw new Error(`Device with id ${id} does not exist.`);
+      }
+
+      const mutation = `
+        mutation(
+          $_id: String!, 
+          $deviceName: String,
+          $currentType: MEDIA_TYPES,
+          $currentAssetId: String,
+          $orientation: ORIENTATION_TYPES
+        ) {
+          updateDevice(
+            _id: $_id, 
+            payload: {
+              deviceName: $deviceName,
+              currentType: $currentType,
+              currentAssetId: $currentAssetId,
+              orientation: $orientation
+            }
+          ) {
+            _id
+            deviceName
+            currentType
+            currentAssetId
+            orientation
+          }
+        }
+      `;
+      const response = await this.client.request(mutation, {
         _id: id,
         ...payload,
-      })) as { updateDevice: Device };
+      }) as { updateDevice: Device };
       return response.updateDevice;
     } catch (error: any) {
-      if (error.response?.errors?.[0]?.message) {
-        throw new Error(
-          `Failed to update screen: ${error.response.errors[0].message}`
-        );
-      }
-      throw new Error("Failed to update screen");
+      throw this.handleGraphQLError(error, 'update device');
     }
   }
 
@@ -203,50 +203,45 @@ export class DevicesModule {
     currentAssetId?: string;
     orientation?: "LANDSCAPE" | "PORTRAIT";
   }): Promise<Device> {
-    const existingDevice = await this.findByDeviceName(payload.deviceName);
-    if (existingDevice) {
-      throw new Error(`Device with name ${payload.deviceName} already exists.`);
-    }
-
-    const mutation = `
-      mutation(
-        $deviceName: String!, 
-        $currentType: MEDIA_TYPES,
-        $currentAssetId: String,
-        $orientation: ORIENTATION_TYPES
-      ) {
-        upsertDevice(
-          payload: {
-            deviceName: $deviceName,
-            currentType: $currentType,
-            currentAssetId: $currentAssetId,
-            orientation: $orientation
-          }
-        ) {
-          _id
-          deviceName
-          UUID
-          pairingCode
-          currentType
-          currentAssetId
-          currentPlaylistId
-          localAppVersion
-          orientation
-        }
-      }
-    `;
     try {
-      const response = (await this.client.request(mutation, payload)) as {
+      const existingDevice = await this.findByDeviceName(payload.deviceName);
+      if (existingDevice) {
+        throw new Error(`Device with name ${payload.deviceName} already exists.`);
+      }
+
+      const mutation = `
+        mutation(
+          $deviceName: String!, 
+          $currentType: MEDIA_TYPES,
+          $currentAssetId: String,
+          $orientation: ORIENTATION_TYPES
+        ) {
+          upsertDevice(
+            payload: {
+              deviceName: $deviceName,
+              currentType: $currentType,
+              currentAssetId: $currentAssetId,
+              orientation: $orientation
+            }
+          ) {
+            _id
+            deviceName
+            UUID
+            pairingCode
+            currentType
+            currentAssetId
+            currentPlaylistId
+            localAppVersion
+            orientation
+          }
+        }
+      `;
+      const response = await this.client.request(mutation, payload) as {
         upsertDevice: Device;
       };
       return response.upsertDevice;
     } catch (error: any) {
-      if (error.response?.errors?.[0]?.message) {
-        throw new Error(
-          `Failed to create device: ${error.response.errors[0].message}`
-        );
-      }
-      throw new Error("Failed to create device");
+      throw this.handleGraphQLError(error, 'create device');
     }
   }
 
@@ -260,18 +255,18 @@ export class DevicesModule {
       }
     `;
 
-    const payload = {
-      deviceIds: [id],
-    };
+    try {
+      const response = await this.client.request<{
+        unPairDevices: boolean;
+      }>(mutation, {
+        payload: { deviceIds: [id] },
+        teamId,
+      });
 
-    const response = (await this.client.request(mutation, {
-      payload,
-      teamId,
-    })) as {
-      deleteObjects: boolean;
-    };
-
-    return response.deleteObjects;
+      return response.unPairDevices; // Fix incorrect property name
+    } catch (error: any) {
+      throw this.handleGraphQLError(error, 'delete device');
+    }
   }
 
   async rebootDevice(id: string): Promise<boolean> {
@@ -280,10 +275,14 @@ export class DevicesModule {
         rebootDevice(id: $id)
       }
     `;
-    const response = (await this.client.request(mutation, { id })) as {
-      rebootDevice: boolean;
-    };
-    return response.rebootDevice;
+    try {
+      const response = await this.client.request(mutation, { id }) as {
+        rebootDevice: boolean;
+      };
+      return response.rebootDevice;
+    } catch (error: any) {
+      throw this.handleGraphQLError(error, 'reboot device');
+    }
   }
 
   // Updated Method
@@ -296,51 +295,40 @@ export class DevicesModule {
     scheduleTime?: string
   ): Promise<boolean> {
     const mutation = `
-      mutation PushToScreens(
-        $force: Boolean,
-        $payload: PushToScreensInput!,
-        $teamId: String!
-      ) {
+      mutation PushToScreens($force: Boolean, $payload: PushToScreensInput!, $teamId: String!) {
         pushToScreens(force: $force, payload: $payload, teamId: $teamId)
       }
     `;
 
-    // Prepare payload based on type
     const payload: PushToScreensInput = {
       deviceIds: [deviceId],
       currentAssetId: contentId,
       type,
-    };
-
-    // Add schedule data for scheduled pushes
-    if (type === "SCHEDULE" && scheduleTime) {
-      payload.scheduleData = {
-        localTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        scheduleTime,
-      };
-    }
-
-    // Add temporarily flash data for temporary pushes
-    if (type === "TEMPORARILY" && scheduleMinutes) {
-      payload.temporarilyFlashData = {
-        scheduleTimeMinutes: scheduleMinutes,
-      };
-    }
-
-    const variables = {
-      force: type === "TEMPORARILY", // Force flag for temporary takeover
-      payload,
-      teamId,
+      ...(type === "SCHEDULE" && scheduleTime && {
+        scheduleData: {
+          localTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          scheduleTime,
+        },
+      }),
+      ...(type === "TEMPORARILY" && scheduleMinutes && {
+        temporarilyFlashData: {
+          scheduleTimeMinutes: scheduleMinutes,
+        },
+      }),
     };
 
     try {
-      const response = (await this.client.request(mutation, variables)) as {
+      const response = await this.client.request<{
         pushToScreens: boolean;
-      };
+      }>(mutation, {
+        force: type === "TEMPORARILY",
+        payload,
+        teamId,
+      });
+      
       return response.pushToScreens;
-    } catch (error) {
-      console.error("Error pushing content to device:", error);
-      throw new Error("Failed to push content to device");
+    } catch (error: any) {
+      throw this.handleGraphQLError(error, 'push content to device');
     }
   }
 }

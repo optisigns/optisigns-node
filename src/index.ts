@@ -11,6 +11,9 @@ export class OptiSignsSDK {
   public devices: DevicesModule;
 
   constructor(config: OptiSignsConfig) {
+    if (!config.token || config.token.trim() === "") {
+      throw new Error("Token is required");
+    }
     const endpoint =
       config.endpoint || "https://beta-graphql-gateway.optisigns.com/graphql";
 
@@ -19,7 +22,7 @@ export class OptiSignsSDK {
     }
 
     this.client = new GraphQLClient(endpoint, {
-      headers: { 
+      headers: {
         authorization: `Bearer ${config.token}`,
       },
     });
