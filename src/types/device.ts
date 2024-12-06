@@ -6,16 +6,15 @@ export interface Device {
   currentType?: string;
   currentAssetId?: string;
   currentPlaylistId?: string;
-  localAppVersion?: string;
+localAppVersion?: string;
 }
 
 export interface DeviceQueryParams {
   name?: string;
-  id?: string;
+  _id?: string;
 }
 
 export interface DeviceUpdateInput {
   deviceName?: string;
   // Add other updatable fields
 }
- 

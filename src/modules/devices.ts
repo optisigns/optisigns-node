@@ -4,7 +4,15 @@ import { Device, DeviceQueryParams, DeviceUpdateInput } from "../types/device";
 export class DevicesModule {
   constructor(private client: GraphQLClient) {}
 
-  async listAll(): Promise<Device[]> {
+  // TODO: Update Screen
+
+  // {
+  //   code: 200
+  //   data: {}
+  //   error? extends Error
+  // }
+
+  async listAllDevices(): Promise<Device[]> {
     const query = `
       query {
         devices(query: {}) {
@@ -26,7 +34,9 @@ export class DevicesModule {
       }
     `;
     try {
-      const response = await this.client.request(query) as { devices: { page: { edges: { node: Device }[] } } };
+      const response = (await this.client.request(query)) as {
+        devices: { page: { edges: { node: Device }[] } };
+      };
       return response.devices.page.edges.map((edge) => edge.node);
     } catch (error: any) {
       if (error.response?.errors?.[0]?.message) {
@@ -36,7 +46,7 @@ export class DevicesModule {
     }
   }
 
-  async findByName(name: string): Promise<Device[]> {
+  async findByDeviceName(name: string): Promise<Device[]> {
     const query = `
       query($name: String!) {
         devices(query: { deviceName: $name }) {
@@ -57,11 +67,13 @@ export class DevicesModule {
         }
       }
     `;
-    const response = await this.client.request(query, { name }) as { devices: { page: { edges: { node: Device }[] } } };
+    const response = (await this.client.request(query, { name })) as {
+      devices: { page: { edges: { node: Device }[] } };
+    };
     return response.devices.page.edges.map((edge) => edge.node);
   }
 
-  async getById(id: string): Promise<Device> {
+  async getDeviceById(id: string): Promise<Device> {
     const query = `
       query($id: String!) {
         device(id: $id) {
@@ -76,14 +88,94 @@ export class DevicesModule {
         }
       }
     `;
-    const response = await this.client.request(query, { id }) as { device: Device };
-    return response.device; 
+    const response = (await this.client.request(query, { id })) as {
+      device: Device;
+    };
+    return response.device;
   }
 
-  async update(id: string, data: DeviceUpdateInput): Promise<Device> {
+  async updateDevice(
+    id: string,
+    payload: {
+      deviceName?: string;
+      currentType?: "ASSET" | "PLAYLIST";
+      currentAssetId?: string;
+      orientation?: "LANDSCAPE" | "PORTRAIT";
+    }
+  ): Promise<Device> {
+    // Check if the device exists
+    const existingDevice = await this.getDeviceById(id);
+    if (!existingDevice) {
+      throw new Error(`Device with id ${id} does not exist.`);
+    }
+
     const mutation = `
-      mutation($id: String!, $data: DeviceUpdateInput!) {
-        updateDevice(id: $id, data: $data) {
+      mutation(
+        $_id: String!, 
+        $deviceName: String,
+        $currentType: MEDIA_TYPES,
+        $currentAssetId: String,
+        $orientation: ORIENTATION_TYPES
+      ) {
+        updateDevice(
+          _id: $_id, 
+          payload: {
+            deviceName: $deviceName,
+            currentType: $currentType,
+            currentAssetId: $currentAssetId,
+            orientation: $orientation
+          }
+        ) {
+          _id
+          deviceName
+          currentType
+          currentAssetId
+          orientation
+        }
+      }
+    `;
+    try {
+      const response = (await this.client.request(mutation, {
+        _id: id,
+        ...payload,
+      })) as { updateDevice: Device };
+      return response.updateDevice;
+    } catch (error: any) {
+      if (error.response?.errors?.[0]?.message) {
+        throw new Error(
+          `Failed to update screen: ${error.response.errors[0].message}`
+        );
+      }
+      throw new Error("Failed to update screen");
+    }
+  }
+
+  async createDevice(payload: {
+    deviceName: string;
+    currentType?: "ASSET" | "PLAYLIST";
+    currentAssetId?: string;
+    orientation?: "LANDSCAPE" | "PORTRAIT";
+  }): Promise<Device> {
+    const existingDevice = await this.findByDeviceName(payload.deviceName);
+    if (existingDevice) {
+      throw new Error(`Device with name ${payload.deviceName} already exists.`);
+    }
+
+    const mutation = `
+      mutation(
+        $deviceName: String!, 
+        $currentType: MEDIA_TYPES,
+        $currentAssetId: String,
+        $orientation: ORIENTATION_TYPES
+      ) {
+        upsertDevice(
+          payload: {
+            deviceName: $deviceName,
+            currentType: $currentType,
+            currentAssetId: $currentAssetId,
+            orientation: $orientation
+          }
+        ) {
           _id
           deviceName
           UUID
@@ -92,40 +184,76 @@ export class DevicesModule {
           currentAssetId
           currentPlaylistId
           localAppVersion
+          orientation
         }
       }
     `;
-    const response = await this.client.request(mutation, { id, data }) as { updateDevice: Device };
-    return response.updateDevice;
+    try {
+      const response = (await this.client.request(mutation, payload)) as {
+        upsertDevice: Device;
+      };
+      return response.upsertDevice;
+    } catch (error: any) {
+      if (error.response?.errors?.[0]?.message) {
+        throw new Error(
+          `Failed to create device: ${error.response.errors[0].message}`
+        );
+      }
+      throw new Error("Failed to create device");
+    }
   }
 
-  async delete(id: string): Promise<boolean> {
+  /**
+   * Notes - Cannot use deleteObjects mutation + this only works for unpairing not actual deletion
+   */
+  async deleteDeviceById(id: string, teamId: string): Promise<boolean> {
     const mutation = `
-      mutation($id: String!) {
-        deleteDevice(id: $id)
+      mutation($payload: UnPairDeviceInput!, $teamId: String!) {
+        unPairDevices(payload: $payload, teamId: $teamId)
       }
     `;
-    const response = await this.client.request(mutation, { id }) as { deleteDevice: boolean };
-    return response.deleteDevice;
+
+    const payload = {
+      deviceIds: [id],
+    };
+
+    const response = (await this.client.request(mutation, {
+      payload,
+      teamId,
+    })) as {
+      deleteObjects: boolean;
+    };
+
+    return response.deleteObjects;
   }
 
-  async reboot(id: string): Promise<boolean> {
+  async rebootDevice(id: string): Promise<boolean> {
     const mutation = `
       mutation($id: String!) {
         rebootDevice(id: $id)
       }
     `;
-    const response = await this.client.request(mutation, { id }) as { rebootDevice: boolean };
+    const response = (await this.client.request(mutation, { id })) as {
+      rebootDevice: boolean;
+    };
     return response.rebootDevice;
   }
 
-  async pushContent(id: string, contentId: string, temporary: boolean = false): Promise<boolean> {
+  async pushContent(
+    id: string,
+    contentId: string,
+    temporary: boolean = false
+  ): Promise<boolean> {
     const mutation = `
       mutation($id: String!, $contentId: String!, $temporary: Boolean!) {
         pushContentToDevice(id: $id, contentId: $contentId, temporary: $temporary)
       }
     `;
-    const response = await this.client.request(mutation, { id, contentId, temporary }) as { pushContentToDevice: boolean };
+    const response = (await this.client.request(mutation, {
+      id,
+      contentId,
+      temporary,
+    })) as { pushContentToDevice: boolean };
     return response.pushContentToDevice;
   }
 }

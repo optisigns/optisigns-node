@@ -1,8 +1,8 @@
 // Define TypeScript interfaces to match your API structure
 interface Device {
-  id: string;
+  _id: string;
   name: string;
-  status: 'ONLINE' | 'OFFLINE';
+  status: "ONLINE" | "OFFLINE";
   lastSeen: string;
   location?: string;
   description?: string;
@@ -36,10 +36,10 @@ export const mockDevicesList = {
             UUID: "uuid-1",
             pairingCode: "pair-1",
             currentType: "DISPLAY",
-            currentAssetId: "asset-1", 
+            currentAssetId: "asset-1",
             currentPlaylistId: "playlist-1",
-            localAppVersion: "1.0.0"
-          }
+            localAppVersion: "1.0.0",
+          },
         },
         {
           node: {
@@ -50,17 +50,17 @@ export const mockDevicesList = {
             currentType: "DISPLAY",
             currentAssetId: "asset-2",
             currentPlaylistId: "playlist-2",
-            localAppVersion: "1.0.0"
-          }
-        }
-      ]
-    }
-  }
+            localAppVersion: "1.0.0",
+          },
+        },
+      ],
+    },
+  },
 };
 
 export const mockDeviceDetails: DeviceResponse = {
   device: {
-    id: "1",
+    _id: "1",
     name: "Device 1",
     status: "ONLINE",
     lastSeen: "2024-03-20T10:00:00Z",
@@ -69,12 +69,12 @@ export const mockDeviceDetails: DeviceResponse = {
     tags: ["reception", "lobby"],
     metadata: {
       screenOrientation: "landscape",
-      screenResolution: "1920x1080"
-    }
-  }
+      screenResolution: "1920x1080",
+    },
+  },
 };
 
 // Error responses
 export const mockErrorResponses = {
-  invalidToken: new Error('Invalid authentication token')
+  invalidToken: new Error("Invalid authentication token"),
 };
