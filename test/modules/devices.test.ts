@@ -94,11 +94,48 @@ describe("DevicesModule", () => {
     });
   });
 
-  describe("pushContent", () => {
-    it("should push content to device successfully", async () => {
-      mockClient.request.mockResolvedValueOnce({ pushContentToDevice: true });
-      const result = await devicesModule.pushContent("1", "content-1", false);
+  describe("pushContentToDevice", () => {
+    it("should push content to device successfully with NOW type", async () => {
+      mockClient.request.mockResolvedValueOnce({ pushToScreens: true });
+      const result = await devicesModule.pushContentToDevice(
+        "device-1",
+        "content-1",
+        "team-1"
+      );
       expect(result).toBe(true);
+    });
+
+    it("should push scheduled content successfully", async () => {
+      mockClient.request.mockResolvedValueOnce({ pushToScreens: true });
+      const scheduleTime = new Date().toISOString();
+      const result = await devicesModule.pushContentToDevice(
+        "device-1",
+        "content-1",
+        "team-1",
+        "SCHEDULE",
+        undefined,
+        scheduleTime
+      );
+      expect(result).toBe(true);
+    });
+
+    it("should push temporary content successfully", async () => {
+      mockClient.request.mockResolvedValueOnce({ pushToScreens: true });
+      const result = await devicesModule.pushContentToDevice(
+        "device-1",
+        "content-1",
+        "team-1",
+        "TEMPORARILY",
+        30
+      );
+      expect(result).toBe(true);
+    });
+
+    it("should handle errors when pushing content", async () => {
+      mockClient.request.mockRejectedValueOnce(new Error("Push failed"));
+      await expect(
+        devicesModule.pushContentToDevice("device-1", "content-1", "team-1")
+      ).rejects.toThrow("Failed to push content to device");
     });
   });
 });

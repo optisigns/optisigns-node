@@ -1,6 +1,53 @@
 import { GraphQLClient } from "graphql-request";
 import { Device, DeviceQueryParams, DeviceUpdateInput } from "../types/device";
 
+// Move these type definitions to the top of the file, before the class
+export type PushToScreensType = "NOW" | "SCHEDULE" | "TEMPORARILY";
+export type MediaTypes = "ASSET" | "NONE" | "PLAYLIST" | "SCHEDULE";
+
+export interface TemporarilyFlashDevicesInput {
+  scheduleTimeMinutes: number; // Duration in minutes
+}
+
+export interface ScheduleGoLiveTimeDevicesInput {
+  afterExpire?: PushToScreensType; // Action after expiry
+  expireScheduleTime?: string; // Expiration time in ISO format
+  isCheckExpireTime?: boolean; // Whether to check expiration time
+  localTimezone: string; // Timezone, required
+  scheduleTime: string; // Scheduled time in ISO format
+}
+
+export interface PushToScreenPlaylistInput {
+  duration?: number; // Playlist duration in seconds
+  isAppendPlaylist?: boolean; // Whether to append to existing playlist
+}
+
+export interface PushToScreensInput {
+  addToPlaylist?: boolean;
+  currentAssetId?: string;
+  currentPlaylistId?: string;
+  currentScheduleId?: string;
+  currentType?: MediaTypes;
+  deviceIds: string[]; // Required: Device or screen IDs
+  documentDuration?: number;
+  engage?: boolean;
+  playlistData?: PushToScreenPlaylistInput;
+  scale?: string;
+  scheduleData?: ScheduleGoLiveTimeDevicesInput;
+  stretchAsset?: boolean;
+  tagRules?: string[];
+  tags?: string[];
+  teamId?: string;
+  temporarilyFlashData?: TemporarilyFlashDevicesInput;
+  type: PushToScreensType; // Type of push action
+}
+
+export interface PushToScreensMutationInput {
+  force?: boolean;
+  payload: PushToScreensInput;
+  teamId: string;
+}
+
 export class DevicesModule {
   constructor(private client: GraphQLClient) {}
 
@@ -239,21 +286,61 @@ export class DevicesModule {
     return response.rebootDevice;
   }
 
-  async pushContent(
-    id: string,
+  // Updated Method
+  async pushContentToDevice(
+    deviceId: string,
     contentId: string,
-    temporary: boolean = false
+    teamId: string,
+    type: PushToScreensType = "NOW",
+    scheduleMinutes?: number,
+    scheduleTime?: string
   ): Promise<boolean> {
     const mutation = `
-      mutation($id: String!, $contentId: String!, $temporary: Boolean!) {
-        pushContentToDevice(id: $id, contentId: $contentId, temporary: $temporary)
+      mutation PushToScreens(
+        $force: Boolean,
+        $payload: PushToScreensInput!,
+        $teamId: String!
+      ) {
+        pushToScreens(force: $force, payload: $payload, teamId: $teamId)
       }
     `;
-    const response = (await this.client.request(mutation, {
-      id,
-      contentId,
-      temporary,
-    })) as { pushContentToDevice: boolean };
-    return response.pushContentToDevice;
+
+    // Prepare payload based on type
+    const payload: PushToScreensInput = {
+      deviceIds: [deviceId],
+      currentAssetId: contentId,
+      type,
+    };
+
+    // Add schedule data for scheduled pushes
+    if (type === "SCHEDULE" && scheduleTime) {
+      payload.scheduleData = {
+        localTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        scheduleTime,
+      };
+    }
+
+    // Add temporarily flash data for temporary pushes
+    if (type === "TEMPORARILY" && scheduleMinutes) {
+      payload.temporarilyFlashData = {
+        scheduleTimeMinutes: scheduleMinutes,
+      };
+    }
+
+    const variables = {
+      force: type === "TEMPORARILY", // Force flag for temporary takeover
+      payload,
+      teamId,
+    };
+
+    try {
+      const response = (await this.client.request(mutation, variables)) as {
+        pushToScreens: boolean;
+      };
+      return response.pushToScreens;
+    } catch (error) {
+      console.error("Error pushing content to device:", error);
+      throw new Error("Failed to push content to device");
+    }
   }
 }
