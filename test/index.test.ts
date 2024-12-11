@@ -1,4 +1,4 @@
-import { OptiSignsSDK } from "../src/index";
+import { OptiSigns } from "../src/index";
 import { GraphQLClient } from "graphql-request";
 import {
   mockDevicesList,
@@ -13,7 +13,7 @@ jest.mock("graphql-request", () => ({
 
 describe("OptiSignsSDK", () => {
   const mockToken = "test-token";
-  let sdk: OptiSignsSDK;
+  let sdk: OptiSigns;
   let mockClient: jest.Mocked<GraphQLClient>;
 
   beforeEach(() => {
@@ -22,7 +22,7 @@ describe("OptiSignsSDK", () => {
     // Get the mocked client directly from GraphQLClient
     mockClient = new GraphQLClient("") as jest.Mocked<GraphQLClient>;
 
-    sdk = new OptiSignsSDK({
+    sdk = new OptiSigns({
       token: mockToken,
     });
   });
@@ -41,7 +41,7 @@ describe("OptiSignsSDK", () => {
 
     it("should throw error for invalid endpoint", () => {
       expect(() => {
-        new OptiSignsSDK({
+        new OptiSigns({
           token: mockToken,
           endpoint: "invalid-url",
         });
@@ -50,7 +50,7 @@ describe("OptiSignsSDK", () => {
 
     it("should throw error for empty token", () => {
       expect(() => {
-        new OptiSignsSDK({
+        new OptiSigns({
           token: "",
         });
       }).toThrow("Token is required");

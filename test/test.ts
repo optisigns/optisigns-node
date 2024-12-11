@@ -1,10 +1,10 @@
-import { OptiSignsSDK } from "../src/index";
+import { OptiSigns } from "../src/index";
 import * as dotenv from "dotenv";
 
 dotenv.config();
 
 async function testSDK() {
-  const sdk = new OptiSignsSDK({
+  const sdk = new OptiSigns({
     token: process.env.OPTISIGNS_API_TOKEN as string,
     endpoint: "https://beta-graphql-gateway.optisigns.com/graphql",
   });

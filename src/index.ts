@@ -6,7 +6,7 @@ interface OptiSignsConfig {
   endpoint?: string;
 }
 
-export class OptiSignsSDK {
+export class OptiSigns {
   private client: GraphQLClient;
   public devices: DevicesModule;
 
