@@ -148,12 +148,14 @@ export class DevicesModule {
       const response = (await this.client.request(query, { id })) as {
         devices: { page: { edges: { node: Device }[] } };
       };
+
       const devices = response.devices.page.edges.map((edge) => edge.node);
       if (devices.length === 0) {
         throw new Error(`Device with id ${id} not found`);
       }
       return devices[0];
     } catch (error: any) {
+      console.error(error);
       throw this.handleGraphQLError(error, "get device by id");
     }
   }
@@ -345,8 +347,8 @@ export class DevicesModule {
 
       return response.pushToScreens;
     } catch (error: any) {
-      console.log(`PUSH CONTENT TO DEVICEERROR`);
-      console.error(error);
+      // console.log(`PUSH CONTENT TO DEVICEERROR`);
+      // console.error(error);
       throw this.handleGraphQLError(error, "push content to device");
     }
   }

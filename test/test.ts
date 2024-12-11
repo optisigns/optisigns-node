@@ -33,7 +33,7 @@ async function testSDK() {
       // Test immediate push with current asset
       console.log("\n🚀 Testing immediate content push...");
       const immediateResult = await sdk.devices.pushContentToDevice(
-        testDevice._id,
+        testDevice._id as string,
         testDevice.currentAssetId as string,
         "1"
       );
@@ -44,7 +44,7 @@ async function testSDK() {
       const futureTime = new Date();
       futureTime.setMinutes(futureTime.getMinutes() + 5);
       const scheduledResult = await sdk.devices.pushContentToDevice(
-        testDevice._id,
+        testDevice._id as string,
         testDevice.currentAssetId as string,
         "1",
         "SCHEDULE",
@@ -56,7 +56,7 @@ async function testSDK() {
       // Test temporary push
       console.log("\n⏱️ Testing temporary content push (30 minutes)...");
       const temporaryResult = await sdk.devices.pushContentToDevice(
-        testDevice._id,
+        testDevice._id as string,
         testDevice.currentAssetId as string,
         "1",
         "TEMPORARILY",

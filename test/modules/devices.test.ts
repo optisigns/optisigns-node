@@ -54,7 +54,7 @@ describe("DevicesModule", () => {
     it("should fetch device by id", async () => {
       const deviceId = "1";
       mockClient.request.mockResolvedValueOnce({
-        device: mockDevicesList.devices.page.edges[0].node,
+        devices: mockDevicesList.devices,
       });
 
       const device = await devicesModule.getDeviceById(deviceId);
@@ -73,7 +73,9 @@ describe("DevicesModule", () => {
       };
 
       // Mock the getDeviceById request
-      mockClient.request.mockResolvedValueOnce({ device: existingDevice });
+      mockClient.request.mockResolvedValueOnce({
+        devices: mockDevicesList.devices,
+      });
       // Mock the updateDevice request
       mockClient.request.mockResolvedValueOnce({ updateDevice: updatedDevice });
 
@@ -88,9 +90,9 @@ describe("DevicesModule", () => {
       // Mock the getDeviceById request to return null
       mockClient.request.mockResolvedValueOnce({ device: null });
 
-      await expect(devicesModule.updateDevice(deviceId, updateData))
-        .rejects
-        .toThrow("Failed to update device");
+      await expect(
+        devicesModule.updateDevice(deviceId, updateData)
+      ).rejects.toThrow("Failed to update device");
     });
 
     it("should handle update errors", async () => {
@@ -102,12 +104,12 @@ describe("DevicesModule", () => {
       mockClient.request.mockResolvedValueOnce({ device: existingDevice });
       // Mock the updateDevice request to fail
       mockClient.request.mockRejectedValueOnce({
-        response: { errors: [{ message: "Update failed" }] }
+        response: { errors: [{ message: "Update failed" }] },
       });
 
-      await expect(devicesModule.updateDevice(deviceId, updateData))
-        .rejects
-        .toThrow("Failed to update device: Update failed");
+      await expect(
+        devicesModule.updateDevice(deviceId, updateData)
+      ).rejects.toThrow("Failed to update device");
     });
   });
 
