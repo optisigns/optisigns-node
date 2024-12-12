@@ -1,55 +1,107 @@
-# OptiSigns
+# OptiSigns SDK
 
-### Contributing
+Official TypeScript SDK for the OptiSigns API, providing easy integration for digital signage management.
 
-> NOTE: Before committing your changes, ensure that you have tested them locally using `pnpm test` and have ran them through a single pass of successful linting and formatting using `pnpm beautify`
+## Installation
 
-1. **Feature branch**
-
-All contributions should be from a feature branch whose name is derived from Linear, the format is as follows: `<username>/res-<issue_number>-<issue_title>`.
-
-For example: `songsen/uploadFile`
-
-2. **Pull request**
-
-A pull request must be created against `main` in order for a contribution to be valid. Each pull request must fill out the pull request template as accurately as possible with as much detail and context for the pull request reviewer.
-
-3. **Commit messages**
-
-Commits should be descriptive and follow the conventional commits standard listed below.
-
-#### Commit type
-
-| Commit Type | Title                    | Description                                                                                              |
-| ----------- | ------------------------ | -------------------------------------------------------------------------------------------------------- |
-| `init`      | Inital Commit            | The projects first commit                                                                                |
-| `feat`      | Features                 | A commit denoting a new feature                                                                          |
-| `fix`       | Bug Fixes                | A commit denoting a bug Fix                                                                              |
-| `docs`      | Documentation            | Documentation changes                                                                                    |
-| `style`     | Styles                   | Changes that do not affect the meaning of the code (white-space, formatting, linting, etc)               |
-| `refactor`  | Code Refactoring         | A code change, enhancement or improvement that neither fixes a bug nor adds a feature                    |
-| `perf`      | Performance Improvements | A code optimisation that improves performance                                                            |
-| `test`      | Tests                    | Adding tests or correcting existing tests                                                                |
-| `ci`        | Continuous Integration   | Changes to our CI configuration files and scripts (e.g.: Github Actions, Terraform, Docker, K8s)         |
-| `revert`    | Reverts                  | Reverts a previous commit                                                                                |
-| `chore`     | Chores                   | Changes that do not fit within the above categories and do not add or remove application or package code |
-
-## Examples
-
-Each commit should have the following format:
-
-```
-commitType: commit message
+```bash
+npm install @optisigns/optisigns
 ```
 
-```
-init: the beginning of new things
+## Quick Start
+
+```typescript
+import { OptiSigns } from "@optisigns/optisigns";
+
+const client = new OptiSigns("YOUR_API_KEY");
 ```
 
-```
-feat: add temporal worker impl
+## Features
+
+### Devices/Screens
+
+- List all devices
+- Find device by name
+- Get device by ID
+- Create device
+- Update device
+- Delete device
+- Reboot device
+- Push content to screen
+
+### Assets
+
+- Upload file asset (local or S3 URL)
+- Create website asset
+- Modify asset settings
+- Delete asset
+
+## Example Usage
+
+### Managing Devices
+
+```typescript
+// List all devices
+const devices = await client.devices.listAllDevices();
+
+// Find device by name
+const device = await client.devices.findByDeviceName("Reception");
+
+// Get device by ID
+const device = await client.devices.getDeviceById("device_id");
+
+// Create new device
+const newDevice = await client.devices.createDevice({
+  deviceName: "Reception Screen",
+  orientation: "LANDSCAPE",
+});
+
+// Update device
+await client.devices.updateDevice("device_id", {
+  deviceName: "Updated Screen Name",
+});
+
+// Delete device
+await client.devices.deleteDeviceById("device_id", "team_id");
+
+// Push content to screen
+await client.devices.pushContentToDevice(
+  "device_id",
+  "content_id",
+  "team_id",
+  "NOW"
+);
 ```
 
+### Managing Assets
+
+```typescript
+// Upload file asset
+const asset = await client.assets.uploadFileAsset(
+  "./path/to/image.jpg",
+  "team_id"
+);
+
+// Create website asset
+const websiteAsset = await client.assets.createWebsiteAppAsset({
+  url: "https://example.com",
+  title: "Company Website",
+}, "team_id");
+
+// Modify asset settings
+await client.assets.modifyAssetSettings("asset_id", {
+  name: "Updated Asset Name",
+  metadata: { key: "value" }
+}, "team_id");
+
+// Delete asset
+await client.assets.deleteAssetById("asset_id", "team_id");
 ```
-docs: write code examples for using proxy with cli commands
-```
+
+## Documentation
+
+For detailed API documentation, visit [OptiSigns Documentation](https://docs.optisigns.com)
+
+## Support
+
+For support, please contact support@optisigns.com or visit our [Support Center](https://support.optisigns.com)
