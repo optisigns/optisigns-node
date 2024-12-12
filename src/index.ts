@@ -1,5 +1,6 @@
 import { GraphQLClient } from "graphql-request";
 import { DevicesModule } from "./modules/devices";
+import { AssetsModule } from "./modules/assets";
 
 interface OptiSignsConfig {
   token: string;
@@ -9,6 +10,7 @@ interface OptiSignsConfig {
 export class OptiSigns {
   private client: GraphQLClient;
   public devices: DevicesModule;
+  public assets: AssetsModule;
 
   constructor(config: OptiSignsConfig) {
     if (!config.token || config.token.trim() === "") {
@@ -28,6 +30,7 @@ export class OptiSigns {
     });
 
     this.devices = new DevicesModule(this.client);
+    this.assets = new AssetsModule(this.client);
   }
 
   private isValidUrl(url: string): boolean {

@@ -199,122 +199,152 @@ export class AssetsModule {
    * Modify asset settings
    * @param id - Asset ID
    * @param settings - ModifyAssetSettingsInput
+   * @param teamId - Optional Team ID
    */
   async modifyAssetSettings(
     id: string,
-    settings: ModifyAssetSettingsInput
+    settings: ModifyAssetSettingsInput,
+    teamId?: string
   ): Promise<Asset> {
-    // TODO
+    // Determine asset type and call the appropriate private method
+    const assetDetail = await this.getAssetDetail(id, teamId);
+    if (assetDetail.type === "file") {
+      return this.modifyFileAssetSettings(id, settings, teamId);
+    } else if (assetDetail.type === "web") {
+      return this.modifyWebsiteAssetSettings(id, settings, teamId);
+    }
+    throw new Error(`Unsupported asset type: ${assetDetail.type}`);
+  }
+
+  // Private method to modify file asset settings
+  private async modifyFileAssetSettings(
+    id: string,
+    settings: ModifyAssetSettingsInput,
+    teamId?: string
+  ): Promise<Asset> {
+    const assetDetail = await this.getAssetDetail(id, teamId); // Get existing asset details
     const mutation = `
-      mutation($id: String!, $name: String, $metadata: JSON) {
-        updateAsset(_id: $id, payload: { name: $name, metadata: $metadata }) {
+      mutation($teamId: String, $payload: SaveAssetInput!) {
+        saveAsset(teamId: $teamId, payload: $payload) {
           _id
           name
           type
           url
           metadata
-          expirationTime
-          createdAt
-          updatedAt
+          status
+          lastUpdatedDate
+          teamId
+          path
         }
       }
     `;
+
     try {
       const response = (await this.client.request(mutation, {
-        id,
-        ...settings,
+        teamId: teamId,
+        payload: {
+          ...assetDetail, // Spread existing asset details
+          ...settings, // Include new settings
+        },
       })) as {
-        updateAsset: Asset;
+        saveAsset: Asset;
       };
-      return response.updateAsset;
+      return response.saveAsset;
     } catch (error: any) {
-      throw this.handleGraphQLError(error, "modify asset settings");
+      console.error("Modify File Asset Settings Error:", error);
+      throw this.handleGraphQLError(error, "modify file asset settings");
     }
   }
 
-  /**
-   * Schedule an asset to expire
-   * @param input - ScheduleAssetExpirationInput
-   */
-  async scheduleAssetExpiration(
-    input: ScheduleAssetExpirationInput
+  // Private method to modify website asset settings
+  private async modifyWebsiteAssetSettings(
+    id: string,
+    settings: ModifyAssetSettingsInput,
+    teamId?: string
   ): Promise<Asset> {
-    // TODO
+    const assetDetail = await this.getAssetDetail(id, teamId); // Get existing asset details
     const mutation = `
-      mutation($assetId: String!, $expirationTime: String!, $actionAfterExpire: String) {
-        scheduleAssetExpiration(payload: { assetId: $assetId, expirationTime: $expirationTime, actionAfterExpire: $actionAfterExpire }) {
+      mutation($teamId: String, $payload: SaveAssetInput!) {
+        saveAsset(teamId: $teamId, payload: $payload) {
           _id
           name
           type
           url
           metadata
-          expirationTime
-          createdAt
-          updatedAt
+          status
+          lastUpdatedDate
+          teamId
+          path
         }
       }
     `;
+
     try {
-      const response = (await this.client.request(mutation, input)) as {
-        scheduleAssetExpiration: Asset;
+      const response = (await this.client.request(mutation, {
+        teamId: teamId,
+        payload: {
+          ...assetDetail, // Spread existing asset details
+          ...settings, // Include new settings
+        },
+      })) as {
+        saveAsset: Asset;
       };
-      return response.scheduleAssetExpiration;
+      return response.saveAsset;
     } catch (error: any) {
-      throw this.handleGraphQLError(error, "schedule asset expiration");
+      throw this.handleGraphQLError(error, "modify website asset settings");
+    }
+  }
+
+  // Private method to get asset details
+  private async getAssetDetail(id: string, teamId?: string): Promise<Asset> {
+    const query = `
+      query($id: String!, $teamId: String) {
+        getAssetDetail(_id: $id, teamId: $teamId)
+      }
+    `;
+
+    try {
+      const assetResponse = (await this.client.request(query, {
+        id,
+        teamId,
+      })) as {
+        getAssetDetail: Asset;
+      };
+
+      if (!assetResponse.getAssetDetail) {
+        throw new Error(`Asset with id ${id} not found`);
+      }
+
+      return assetResponse.getAssetDetail;
+    } catch (error: any) {
+      throw this.handleGraphQLError(error, "get asset detail");
     }
   }
 
   /**
-   * Delete an asset by ID
+   * Delete an asset by ID using deleteObjects mutation
    * @param id - Asset ID
    * @param teamId - Team ID for authorization
    */
   async deleteAssetById(id: string, teamId: string): Promise<boolean> {
-    // TODO
     const mutation = `
-      mutation($id: String!, $teamId: String!) {
-        deleteAsset(_id: $id, teamId: $teamId)
+      mutation($payload: DeleteObjectInput!, $teamId: String) {
+        deleteObjects(payload: $payload, teamId: $teamId)
       }
     `;
+
+    const payload = {
+      ids: [id],
+      type: "ASSET" as const, // must match the OBJECT_TYPES enum (defined in the graphql docs)
+    };
+
     try {
       const response = await this.client.request<{
-        deleteAsset: boolean;
-      }>(mutation, { id, teamId });
-      return response.deleteAsset;
+        deleteObjects: boolean;
+      }>(mutation, { payload, teamId });
+      return response.deleteObjects;
     } catch (error: any) {
       throw this.handleGraphQLError(error, "delete asset");
-    }
-  }
-
-  /**
-   * Push assets to devices/screens
-   * @param payload - PushToScreensInput
-   * @param teamId - Team ID
-   * @param force - Optional force flag
-   */
-  async pushAssetsToScreens(
-    payload: PushToScreensInput,
-    teamId: string,
-    force: boolean = false
-  ): Promise<boolean> {
-    // TODO
-    const mutation = `
-      mutation PushAssetsToScreens($force: Boolean, $payload: PushToScreensInput!, $teamId: String!) {
-        pushToScreens(force: $force, payload: $payload, teamId: $teamId)
-      }
-    `;
-    try {
-      const response = await this.client.request<{
-        pushToScreens: boolean;
-      }>(mutation, {
-        force,
-        payload,
-        teamId,
-      });
-      return response.pushToScreens;
-    } catch (error: any) {
-      console.error("PUSH ASSETS TO SCREENS ERROR:", error);
-      throw this.handleGraphQLError(error, "push assets to screens");
     }
   }
 }
