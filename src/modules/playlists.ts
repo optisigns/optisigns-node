@@ -106,6 +106,12 @@ mutation SavePlaylist($payload: PlaylistInput!, $teamId: String) {
 }
 `;
 
+const DELETE_PLAYLIST_MUTATION = `
+mutation($payload: DeleteObjectInput!, $teamId: String) {
+  deleteObjects(payload: $payload, teamId: $teamId)
+}
+`;
+
 export class PlaylistsModule {
   constructor(private client: GraphQLClient) {}
 
@@ -226,12 +232,6 @@ export class PlaylistsModule {
    * @param teamId Optional team ID
    */
   async deletePlaylist(id: string, teamId?: string): Promise<boolean> {
-    const mutation = `
-    mutation($payload: DeleteObjectInput!, $teamId: String) {
-      deleteObjects(payload: $payload, teamId: $teamId)
-    }
-  `;
-
     const payload = {
       ids: [id],
       type: "PLAYLIST" as const, // must match the OBJECT_TYPES enum (defined in the graphql docs)
@@ -240,7 +240,7 @@ export class PlaylistsModule {
     try {
       const response = await this.client.request<{
         deleteObjects: boolean;
-      }>(mutation, { payload, teamId });
+      }>(DELETE_PLAYLIST_MUTATION, { payload, teamId });
       return response.deleteObjects;
     } catch (error: any) {
       throw this.handleGraphQLError(error, "delete asset");
