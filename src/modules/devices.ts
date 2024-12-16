@@ -176,6 +176,13 @@ export class DevicesModule {
         throw new Error(`Device with id ${id} does not exist.`);
       }
 
+      /**
+       * TODO: Current playlist id + current schedule id - this is how you takeover the screen (no need to push content)
+       * For moving folders updateDevice with PATH in the payload, just go to screens -> devices and check for the device and it's metadata associated with it
+       * assign operational schedule is also another field in update screen - feature.scheduleOpsId
+       * update content tag rule feature.contentTagRuleId
+       */
+
       const mutation = `
         mutation(
           $_id: String!, 
@@ -303,53 +310,53 @@ export class DevicesModule {
   }
 
   // Updated Method
-  async pushContentToDevice(
-    deviceId: string,
-    contentId: string,
-    teamId: string,
-    type: PushToScreensType = "NOW",
-    scheduleMinutes?: number,
-    scheduleTime?: string
-  ): Promise<boolean> {
-    const mutation = `
-      mutation PushToScreens($force: Boolean, $payload: PushToScreensInput!, $teamId: String!) {
-        pushToScreens(force: $force, payload: $payload, teamId: $teamId)
-      }
-    `;
+  // async pushContentToDevice(
+  //   deviceId: string,
+  //   contentId: string,
+  //   teamId: string,
+  //   type: PushToScreensType = "NOW",
+  //   scheduleMinutes?: number,
+  //   scheduleTime?: string
+  // ): Promise<boolean> {
+  //   const mutation = `
+  //     mutation PushToScreens($force: Boolean, $payload: PushToScreensInput!, $teamId: String!) {
+  //       pushToScreens(force: $force, payload: $payload, teamId: $teamId)
+  //     }
+  //   `;
 
-    const payload: PushToScreensInput = {
-      deviceIds: [deviceId],
-      currentAssetId: contentId,
-      type,
-      ...(type === "SCHEDULE" &&
-        scheduleTime && {
-          scheduleData: {
-            localTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            scheduleTime,
-          },
-        }),
-      ...(type === "TEMPORARILY" &&
-        scheduleMinutes && {
-          temporarilyFlashData: {
-            scheduleTimeMinutes: scheduleMinutes,
-          },
-        }),
-    };
+  //   const payload: PushToScreensInput = {
+  //     deviceIds: [deviceId],
+  //     currentAssetId: contentId,
+  //     type,
+  //     ...(type === "SCHEDULE" &&
+  //       scheduleTime && {
+  //         scheduleData: {
+  //           localTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  //           scheduleTime,
+  //         },
+  //       }),
+  //     ...(type === "TEMPORARILY" &&
+  //       scheduleMinutes && {
+  //         temporarilyFlashData: {
+  //           scheduleTimeMinutes: scheduleMinutes,
+  //         },
+  //       }),
+  //   };
 
-    try {
-      const response = await this.client.request<{
-        pushToScreens: boolean;
-      }>(mutation, {
-        force: type === "TEMPORARILY",
-        payload,
-        teamId,
-      });
+  //   try {
+  //     const response = await this.client.request<{
+  //       pushToScreens: boolean;
+  //     }>(mutation, {
+  //       force: type === "TEMPORARILY",
+  //       payload,
+  //       teamId,
+  //     });
 
-      return response.pushToScreens;
-    } catch (error: any) {
-      // console.log(`PUSH CONTENT TO DEVICEERROR`);
-      // console.error(error);
-      throw this.handleGraphQLError(error, "push content to device");
-    }
-  }
+  //     return response.pushToScreens;
+  //   } catch (error: any) {
+  //     // console.log(`PUSH CONTENT TO DEVICEERROR`);
+  //     // console.error(error);
+  //     throw this.handleGraphQLError(error, "push content to device");
+  //   }
+  // }
 }

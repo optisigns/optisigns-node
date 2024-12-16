@@ -177,7 +177,7 @@ export class AssetsModule {
     try {
       const response = (await this.client.request(mutation, {
         teamId: teamId,
-        payload: {
+        payload: { // TODO: In syncup discuss possible changes to this
           type: "web",
           subType: "static",
           path: null,
