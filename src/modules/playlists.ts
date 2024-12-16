@@ -1,38 +1,13 @@
 import { GraphQLClient } from "graphql-request";
 
-export interface Playlist {
-  _id: string;
-  name: string;
-  items: PlaylistItem[];
-  createdAt: string;
-  lastUpdatedDate: string;
-  teamId?: string;
-}
-
-export interface PlaylistItem {
-  _id: string;
-  assetId: string;
-  duration: number;
-  order: number;
-}
-
-export interface CreatePlaylistInput {
-  name: string;
-  items?: {
-    assetId: string;
-    duration: number;
-  }[];
-}
-
-export interface EditPlaylistInput {
-  name?: string;
-  items?: PlaylistItem[];
-}
-
-export interface ModifyPlaylistItemInput {
-  duration?: number;
-  order?: number;
-}
+import {
+  Playlist,
+  PlaylistInput,
+  PlaylistItem,
+  CreatePlaylistInput,
+  EditPlaylistInput,
+  ModifyPlaylistItemInput,
+} from "../types/playlist";
 
 export class PlaylistsModule {
   constructor(private client: GraphQLClient) {}
@@ -51,7 +26,10 @@ export class PlaylistsModule {
    * @param input CreatePlaylistInput object containing playlist details
    * @param teamId Optional team ID
    */
-  async createPlaylist(input: CreatePlaylistInput, teamId?: string): Promise<Playlist> {
+  async createPlaylist(
+    input: CreatePlaylistInput,
+    teamId?: string
+  ): Promise<Playlist> {
     // TODO: Implement playlist creation
     throw new Error("Not implemented");
   }
@@ -62,7 +40,11 @@ export class PlaylistsModule {
    * @param input EditPlaylistInput with updated playlist details
    * @param teamId Optional team ID
    */
-  async editPlaylist(id: string, input: EditPlaylistInput, teamId?: string): Promise<Playlist> {
+  async editPlaylist(
+    id: string,
+    input: EditPlaylistInput,
+    teamId?: string
+  ): Promise<Playlist> {
     // TODO: Implement playlist editing
     throw new Error("Not implemented");
   }
@@ -73,7 +55,11 @@ export class PlaylistsModule {
    * @param assetIds Array of asset IDs to add
    * @param teamId Optional team ID
    */
-  async addAssetsToPlaylist(playlistId: string, assetIds: string[], teamId?: string): Promise<Playlist> {
+  async addAssetsToPlaylist(
+    playlistId: string,
+    assetIds: string[],
+    teamId?: string
+  ): Promise<Playlist> {
     // TODO: Implement adding assets to playlist
     throw new Error("Not implemented");
   }
@@ -84,7 +70,11 @@ export class PlaylistsModule {
    * @param assetIds Array of asset IDs to remove
    * @param teamId Optional team ID
    */
-  async removeAssetsFromPlaylist(playlistId: string, assetIds: string[], teamId?: string): Promise<Playlist> {
+  async removeAssetsFromPlaylist(
+    playlistId: string,
+    assetIds: string[],
+    teamId?: string
+  ): Promise<Playlist> {
     // TODO: Implement removing assets from playlist
     throw new Error("Not implemented");
   }
@@ -97,7 +87,7 @@ export class PlaylistsModule {
    * @param teamId Optional team ID
    */
   async modifyPlaylistItem(
-    playlistId: string, 
+    playlistId: string,
     itemId: string,
     input: ModifyPlaylistItemInput,
     teamId?: string
