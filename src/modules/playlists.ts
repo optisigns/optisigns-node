@@ -184,7 +184,7 @@ export class PlaylistsModule {
     assetIds: string[],
     teamId?: string
   ): Promise<Playlist> {
-    // TODO: Implement adding assets to playlist
+    // TODO: Implement adding assets to playlist - mutation addPlaylistItems
     throw new Error("Not implemented");
   }
 
@@ -199,7 +199,7 @@ export class PlaylistsModule {
     assetIds: string[],
     teamId?: string
   ): Promise<Playlist> {
-    // TODO: Implement removing assets from playlist
+    // TODO: Implement removing assets from playlist - mutation removePlaylistItems
     throw new Error("Not implemented");
   }
 
@@ -216,7 +216,7 @@ export class PlaylistsModule {
     input: ModifyPlaylistItemInput,
     teamId?: string
   ): Promise<Playlist> {
-    // TODO: Implement modifying playlist item
+    // TODO: Implement modifying playlist item - mutation updatePlaylistItems or movePlaylistItems
     throw new Error("Not implemented");
   }
 
@@ -226,7 +226,24 @@ export class PlaylistsModule {
    * @param teamId Optional team ID
    */
   async deletePlaylist(id: string, teamId?: string): Promise<boolean> {
-    // TODO: Implement playlist deletion
-    throw new Error("Not implemented");
+    const mutation = `
+    mutation($payload: DeleteObjectInput!, $teamId: String) {
+      deleteObjects(payload: $payload, teamId: $teamId)
+    }
+  `;
+
+    const payload = {
+      ids: [id],
+      type: "PLAYLIST" as const, // must match the OBJECT_TYPES enum (defined in the graphql docs)
+    };
+
+    try {
+      const response = await this.client.request<{
+        deleteObjects: boolean;
+      }>(mutation, { payload, teamId });
+      return response.deleteObjects;
+    } catch (error: any) {
+      throw this.handleGraphQLError(error, "delete asset");
+    }
   }
 }

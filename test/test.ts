@@ -69,6 +69,16 @@ async function testSDK() {
       "1" // teamId
     );
     console.log("✅ Edited Playlist:", editPlaylist);
+
+    console.log("🔥 Deleting playlist...");
+    const deletePlaylist = await sdk.playlists.deletePlaylist(
+      newPlaylist._id,
+      "1" // teamId
+    );
+    console.log(
+      "✅ Deleted Playlist:",
+      JSON.stringify(deletePlaylist, null, 2)
+    );
   } catch (error) {
     console.error("❌ Error:", error);
   }
