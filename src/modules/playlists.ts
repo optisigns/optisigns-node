@@ -9,6 +9,28 @@ import {
   ModifyPlaylistItemInput,
 } from "../types/playlist";
 
+const SAVE_PLAYLIST_MUTATION = `
+mutation SavePlaylist($payload: PlaylistInput!, $teamId: String) {
+  savePlaylist(payload: $payload, teamId: $teamId) {
+    _id
+    name
+    teamId
+    tags
+    totalDuration
+    assets {
+      _id
+      assetId
+      duration
+    }
+  }
+}
+`;
+
+// Add interface for the response type
+interface SavePlaylistResponse {
+  savePlaylist: Playlist;
+}
+
 export class PlaylistsModule {
   constructor(private client: GraphQLClient) {}
 
@@ -30,8 +52,22 @@ export class PlaylistsModule {
     input: CreatePlaylistInput,
     teamId?: string
   ): Promise<Playlist> {
-    // TODO: Implement playlist creation
-    throw new Error("Not implemented");
+    try {
+      const payload: PlaylistInput = {
+        name: input.name,
+        assets: input.items || [],
+        teamId,
+      };
+
+      const variables = { payload, teamId };
+      const data = await this.client.request<SavePlaylistResponse>(
+        SAVE_PLAYLIST_MUTATION,
+        variables
+      );
+      return data.savePlaylist;
+    } catch (e) {
+      this.handleGraphQLError(e, "create playlist");
+    }
   }
 
   /**
@@ -45,8 +81,23 @@ export class PlaylistsModule {
     input: EditPlaylistInput,
     teamId?: string
   ): Promise<Playlist> {
-    // TODO: Implement playlist editing
-    throw new Error("Not implemented");
+    try {
+      const payload: PlaylistInput = {
+        _id: id,
+        name: input.name || "Untitled Playlist",
+        assets: input.items || [],
+        teamId,
+      };
+
+      const variables = { payload, teamId };
+      const data = await this.client.request<SavePlaylistResponse>(
+        SAVE_PLAYLIST_MUTATION,
+        variables
+      );
+      return data.savePlaylist;
+    } catch (e) {
+      this.handleGraphQLError(e, "edit playlist");
+    }
   }
 
   /**
