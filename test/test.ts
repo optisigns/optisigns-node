@@ -5,7 +5,7 @@ dotenv.config();
 
 async function testSDK() {
   const sdk = new OptiSigns({
-    token: process.env.OPTISIGNS_API_TOKEN as string
+    token: process.env.OPTISIGNS_API_TOKEN as string,
   });
 
   try {
@@ -32,17 +32,43 @@ async function testSDK() {
     console.log("✅ Created YouTube Website Asset:", youtubeAsset);
 
     // Create a playlist with both assets
-    const newPlaylist = await sdk.playlists.createPlaylist(
-      {
-        name: "Web Services Playlist",
-        items: [
-          { asset: googleAsset._id, duration: 30 }, // Changed assetId to asset
-          { asset: youtubeAsset._id, duration: 30 }, // Changed assetId to asset
-        ],
+    const playlistInput = {
+      name: "Web Services Playlist",
+      // items: [
+      //   {
+      //     ...googleAsset,  // Spread the full asset object
+      //     duration: 30
+      //   },
+      //   {
+      //     ...youtubeAsset, // Spread the full asset object
+      //     duration: 30
+      //   }
+      // ],
+      rootAssetId: googleAsset._id,
+      tags: ["test", "websites"],
+      options: {
+        defaultTransition: "fade",
+        slideDuration: 30,
+        shuffle: false,
       },
+      color: "#FF0000",
+      isDisable: false,
+    };
+
+    const newPlaylist = await sdk.playlists.createPlaylist(
+      playlistInput,
       "1" // teamId
     );
     console.log("✅ Created Playlist with web assets:", newPlaylist);
+
+    const editPlaylist = await sdk.playlists.editPlaylist(
+      newPlaylist._id,
+      {
+        name: "Updated Playlist Name",
+      },
+      "1" // teamId
+    );
+    console.log("✅ Edited Playlist:", editPlaylist);
   } catch (error) {
     console.error("❌ Error:", error);
   }

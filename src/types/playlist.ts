@@ -75,24 +75,25 @@ export interface PlaylistItem {
   youtubeType: string;
 }
 
+// what are these dropboxId, googleDriveId, oneDriveId, etc used for in creating a playlist?
 export interface PlaylistInput {
-  _id: string;
-  assetRootId: string;
-  color: string;
-  contentRotationId: string;
-  dropboxId: string;
-  googleDriveId: string;
-  groupId: string;
-  isDisable: boolean;
-  isScheduleDefault: boolean;
-  lastTeamId: string;
-  lastUpdatedBy: string;
+  _id?: string;
+  assetRootId?: string;
+  color?: string;
+  contentRotationId?: string;
+  dropboxId?: string;
+  googleDriveId?: string;
+  groupId?: string;
+  isDisable?: boolean;
+  isScheduleDefault?: boolean;
+  lastTeamId?: string;
+  lastUpdatedBy?: string;
   name: string;
-  oneDriveId: string;
-  options: PlaylistOptions;
-  path: string;
-  tags: string[];
-  teamId: string;
+  oneDriveId?: string;
+  options?: PlaylistOptions;
+  path?: string;
+  tags?: string[];
+  teamId?: string;
 }
 
 export interface PlaylistOptions {
@@ -110,29 +111,27 @@ export interface PlaylistOptions {
   slideDuration?: number;
   speed?: string;
   speedValue?: number;
-
-  // Deprecated: use scaleDocument instead
   stretchDocuments?: boolean;
-  // Deprecated: use scaleImage instead
   stretchImages?: boolean;
-  // Deprecated: use scaleVideo instead
   stretchVideos?: boolean;
 }
 
-export interface CreatePlaylistInput {
+export interface PlaylistMutationInput {
+  _id?: string;
   name: string;
-  items?: {
-    assetId: string;
-    duration: number;
-  }[];
-}
-
-export interface EditPlaylistInput {
-  name?: string;
   items?: PlaylistItem[];
+  tags?: string[];
+  options?: PlaylistOptions;
+  color?: string;
+  isDisable?: boolean;
 }
 
 export interface ModifyPlaylistItemInput {
   duration?: number;
   order?: number;
+}
+
+// Add interface for the response type
+export interface SavePlaylistResponse {
+  savePlaylist: Playlist;
 }

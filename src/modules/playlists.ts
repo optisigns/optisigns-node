@@ -4,8 +4,8 @@ import {
   Playlist,
   PlaylistInput,
   PlaylistItem,
-  CreatePlaylistInput,
-  EditPlaylistInput,
+  SavePlaylistResponse,
+  PlaylistMutationInput,
   ModifyPlaylistItemInput,
 } from "../types/playlist";
 
@@ -13,23 +13,98 @@ const SAVE_PLAYLIST_MUTATION = `
 mutation SavePlaylist($payload: PlaylistInput!, $teamId: String) {
   savePlaylist(payload: $payload, teamId: $teamId) {
     _id
-    name
-    teamId
-    tags
-    totalDuration
+    accountId
+    assetRootId
     assets {
+      AWSS3ID
       _id
-      assetId
+      appType
+      bucket
+      commonType
+      doc_pages
       duration
+      embedLink
+      fileSize
+      fileType
+      filename
+      framerate
+      height
+      iFrameAllow
+      isCaption
+      isHide
+      isPasswordMaster
+      javascriptMaxRetries
+      javascriptRun
+      level22renderEngine
+      level22requireUserGesture
+      level22simulateTouch
+      level25renderEngine
+      level25requireUserGesture
+      level25simulateTouch
+      levelOtherrenderEngine
+      levelOtherrequireUserGesture
+      levelOthersimulateTouch
+      newWebView
+      normalDuration
+      refreshInterval
+      requestDesktopSite
+      slideDuration
+      speed
+      speedValue
+      srcDuration
+      status
+      subType
+      thumbnail
+      transition
+      type
+      video_1080p
+      video_bitrate
+      video_codec
+      webLink
+      webType
+      width
+      youtubeType
     }
+    color
+    contentRotationId
+    createdAt
+    createdBy
+    dropboxId
+    googleDriveId
+    groupId
+    isDisable
+    isScheduleDefault
+    lastTeamId
+    lastUpdatedBy
+    lastUpdatedDate
+    name
+    oneDriveId
+    options {
+      backgroundAudio
+      backgroundAudioAWSS3ID
+      backgroundAudioName
+      backgroundAudioType
+      defaultTransition
+      durationLimit
+      normalDuration
+      scaleDocument
+      scaleImage
+      scaleVideo
+      shuffle
+      slideDuration
+      speed
+      speedValue
+      stretchDocuments
+      stretchImages
+      stretchVideos
+    }
+    path
+    tags
+    teamId
+    totalDuration
   }
 }
 `;
-
-// Add interface for the response type
-interface SavePlaylistResponse {
-  savePlaylist: Playlist;
-}
 
 export class PlaylistsModule {
   constructor(private client: GraphQLClient) {}
@@ -49,13 +124,12 @@ export class PlaylistsModule {
    * @param teamId Optional team ID
    */
   async createPlaylist(
-    input: CreatePlaylistInput,
+    input: PlaylistMutationInput,
     teamId?: string
   ): Promise<Playlist> {
     try {
       const payload: PlaylistInput = {
         name: input.name,
-        assets: input.items || [],
         teamId,
       };
 
@@ -78,14 +152,13 @@ export class PlaylistsModule {
    */
   async editPlaylist(
     id: string,
-    input: EditPlaylistInput,
+    input: PlaylistMutationInput,
     teamId?: string
   ): Promise<Playlist> {
     try {
       const payload: PlaylistInput = {
         _id: id,
         name: input.name || "Untitled Playlist",
-        assets: input.items || [],
         teamId,
       };
 
