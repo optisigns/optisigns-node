@@ -68,9 +68,8 @@ describe("OptiSignsSDK", () => {
       expect(sdk.devices.findByDeviceName).toBeDefined();
       expect(sdk.devices.getDeviceById).toBeDefined();
       expect(sdk.devices.updateDevice).toBeDefined();
-      expect(sdk.devices.createDevice).toBeDefined();
-      expect(sdk.devices.deleteDeviceById).toBeDefined();
-      expect(sdk.devices.rebootDevice).toBeDefined();
+      expect(sdk.devices.pairDevice).toBeDefined();
+      expect(sdk.devices.unpairDevice).toBeDefined();
       // expect(sdk.devices.pushContentToDevice).toBeDefined();
     });
   });

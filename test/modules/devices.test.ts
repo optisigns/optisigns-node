@@ -116,21 +116,13 @@ describe("DevicesModule", () => {
   describe("delete", () => {
     it("should delete device successfully", async () => {
       mockClient.request.mockResolvedValueOnce({ deleteDevice: undefined });
-      const result = await devicesModule.deleteDeviceById("1", "1");
+      const result = await devicesModule.unpairDevice("1", "1");
       expect(result).toBeUndefined();
     });
 
     it("should handle errors when deleting device", async () => {
       mockClient.request.mockRejectedValueOnce(new Error("Delete failed"));
-      await expect(devicesModule.deleteDeviceById("1", "1")).rejects.toThrow();
-    });
-  });
-
-  describe("reboot", () => {
-    it("should reboot device successfully", async () => {
-      mockClient.request.mockResolvedValueOnce({ rebootDevice: true });
-      const result = await devicesModule.rebootDevice("1");
-      expect(result).toBe(true);
+      await expect(devicesModule.unpairDevice("1", "1")).rejects.toThrow();
     });
   });
 

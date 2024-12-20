@@ -1,5 +1,10 @@
 import { GraphQLClient } from "graphql-request";
-import { Device, DeviceQueryParams, DeviceUpdateInput } from "../types/device";
+import {
+  Device,
+  DeviceQueryParams,
+  DeviceUpdateInput,
+  PairDeviceInput,
+} from "../types/device";
 
 // Move these type definitions to the top of the file, before the class
 export type PushToScreensType = "NOW" | "SCHEDULE" | "TEMPORARILY";
@@ -218,61 +223,60 @@ export class DevicesModule {
     }
   }
 
-  async pairDevice(payload: {
-    deviceName: string;
-    currentType?: "ASSET" | "PLAYLIST";
-    currentAssetId?: string;
-    orientation?: "LANDSCAPE" | "PORTRAIT";
-  }): Promise<Device> {
-    try {
-      const existingDevice = await this.findByDeviceName(payload.deviceName);
-      if (existingDevice) {
-        throw new Error(
-          `Device with name ${payload.deviceName} already exists.`
-        );
-      }
-
-      const mutation = `
-        mutation(
-          $deviceName: String!, 
-          $currentType: MEDIA_TYPES,
-          $currentAssetId: String,
-          $orientation: ORIENTATION_TYPES
-        ) {
-          upsertDevice(
-            payload: {
-              deviceName: $deviceName,
-              currentType: $currentType,
-              currentAssetId: $currentAssetId,
-              orientation: $orientation
-            }
-          ) {
-            _id
-            deviceName
-            UUID
-            pairingCode
-            currentType
-            currentAssetId
-            currentPlaylistId
-            localAppVersion
-            orientation
-          }
+  /**
+   * Pairs a device with the given pairing code to a team
+   * @param pairingCode - The pairing code displayed on the device
+   * @param path - The folder path where the device should appear in app.optisigns.com. Use empty string "" if no folder is needed
+   * @param teamId - The team ID to pair the device to
+   * @returns The paired device object
+   */
+  async pairDevice(
+    pairingCode: string,
+    path: string,
+    teamId: string
+  ): Promise<Device> {
+    const mutation = `
+      mutation($payload: PairDeviceInput!, $teamId: String!) {
+        pairDevice(payload: $payload, teamId: $teamId) {
+          _id
+          deviceName
+          UUID
+          pairingCode
+          currentType
+          currentAssetId
+          currentPlaylistId
+          localAppVersion
+          orientation
         }
-      `;
-      const response = (await this.client.request(mutation, payload)) as {
-        upsertDevice: Device;
-      };
-      return response.upsertDevice;
+      }
+    `;
+
+    const payload: PairDeviceInput = {
+      pairingCode,
+      path,
+      teamId,
+    };
+
+    try {
+      const response = await this.client.request<{
+        pairDevice: Device;
+      }>(mutation, {
+        payload,
+        teamId,
+      });
+      return response.pairDevice;
     } catch (error: any) {
-      throw this.handleGraphQLError(error, "create device");
+      throw this.handleGraphQLError(error, "pair device");
     }
   }
 
   /**
-   * Notes - Cannot use deleteObjects mutation + this only works for unpairing not actual deletion
-   * TODO: Change to unpairDevices
+   * Unpairs a device from a team
+   * @param id - The ID of the device to unpair
+   * @param teamId - The team ID the device is currently paired to
+   * @returns A boolean indicating whether the unpair was successful
    */
-  async deleteDeviceById(id: string, teamId: string): Promise<boolean> {
+  async unpairDevice(id: string, teamId: string): Promise<boolean> {
     const mutation = `
       mutation($payload: UnPairDeviceInput!, $teamId: String!) {
         unPairDevices(payload: $payload, teamId: $teamId)
@@ -287,27 +291,28 @@ export class DevicesModule {
         teamId,
       });
 
-      return response.unPairDevices; // Fix incorrect property name
+      return response.unPairDevices;
     } catch (error: any) {
       throw this.handleGraphQLError(error, "delete device");
     }
   }
 
-  async rebootDevice(id: string): Promise<boolean> {
-    const mutation = `
-      mutation($id: String!) {
-        rebootDevice(id: $id)
-      }
-    `;
-    try {
-      const response = (await this.client.request(mutation, { id })) as {
-        rebootDevice: boolean;
-      };
-      return response.rebootDevice;
-    } catch (error: any) {
-      throw this.handleGraphQLError(error, "reboot device");
-    }
-  }
+  // TODO: These are phase 2 MDM command
+  // async rebootDevice(id: string): Promise<boolean> {
+  //   const mutation = `
+  //     mutation($id: String!) {
+  //       rebootDevice(id: $id)
+  //     }
+  //   `;
+  //   try {
+  //     const response = (await this.client.request(mutation, { id })) as {
+  //       rebootDevice: boolean;
+  //     };
+  //     return response.rebootDevice;
+  //   } catch (error: any) {
+  //     throw this.handleGraphQLError(error, "reboot device");
+  //   }
+  // }
 
   // Updated Method
   // async pushContentToDevice(

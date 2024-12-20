@@ -79,3 +79,9 @@ export interface DeviceUpdateInput {
   deviceName?: string;
   // Add other updatable fields
 }
+
+export interface PairDeviceInput {
+  pairingCode: string;
+  path: string;
+  teamId: string;
+}

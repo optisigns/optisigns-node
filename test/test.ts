@@ -9,76 +9,20 @@ async function testSDK() {
   });
 
   try {
-    // Create Google website asset
-    const googleAsset = await sdk.assets.createWebsiteAppAsset(
-      {
-        url: "https://www.google.com",
-        title: "Google Homepage",
-        description: "The homepage of Google",
-      },
-      "1" // teamId
-    );
-    console.log("✅ Created Google Website Asset:", googleAsset);
+    // Add this new test before other operations
+    // console.log("🔥 Pairing device with code X2B2F1...");
+    // const pairedDevice = await sdk.devices.pairDevice(
+    //   "X2B2F1",
+    //   "",
+    //   "1" // teamId
+    // );
+    // console.log("✅ Paired Device:", JSON.stringify(pairedDevice, null, 2));
 
-    // Create YouTube website asset
-    const youtubeAsset = await sdk.assets.createWebsiteAppAsset(
-      {
-        url: "https://www.youtube.com",
-        title: "YouTube Homepage",
-        description: "The homepage of YouTube",
-      },
-      "1" // teamId
+    const unpairedDevice = await sdk.devices.unpairDevice(
+      "6423c6f994f90f00153db1f4" as string,
+      "1"
     );
-    console.log("✅ Created YouTube Website Asset:", youtubeAsset);
-
-    // Create a playlist with both assets
-    const playlistInput = {
-      name: "Web Services Playlist",
-      // items: [
-      //   {
-      //     ...googleAsset,  // Spread the full asset object
-      //     duration: 30
-      //   },
-      //   {
-      //     ...youtubeAsset, // Spread the full asset object
-      //     duration: 30
-      //   }
-      // ],
-      rootAssetId: googleAsset._id,
-      tags: ["test", "websites"],
-      options: {
-        defaultTransition: "fade",
-        slideDuration: 30,
-        shuffle: false,
-      },
-      color: "#FF0000",
-      isDisable: false,
-    };
-
-    const newPlaylist = await sdk.playlists.createPlaylist(
-      playlistInput,
-      "1" // teamId
-    );
-    console.log("✅ Created Playlist with web assets:", newPlaylist);
-
-    const editPlaylist = await sdk.playlists.editPlaylist(
-      newPlaylist._id,
-      {
-        name: "Updated Playlist Name",
-      },
-      "1" // teamId
-    );
-    console.log("✅ Edited Playlist:", editPlaylist);
-
-    console.log("🔥 Deleting playlist...");
-    const deletePlaylist = await sdk.playlists.deletePlaylist(
-      newPlaylist._id,
-      "1" // teamId
-    );
-    console.log(
-      "✅ Deleted Playlist:",
-      JSON.stringify(deletePlaylist, null, 2)
-    );
+    console.log("✅ Unpaired Device:", JSON.stringify(unpairedDevice, null, 2));
   } catch (error) {
     console.error("❌ Error:", error);
   }
