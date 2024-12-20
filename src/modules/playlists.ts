@@ -7,6 +7,11 @@ import {
   SavePlaylistResponse,
   PlaylistMutationInput,
   ModifyPlaylistItemInput,
+  AddPlaylistItemsInput,
+  AddPlaylistItemsResponse,
+  RemovePlaylistItemsInput,
+  UpdatePlaylistItemInput,
+  UpdatePlaylistItemsInput,
 } from "../types/playlist";
 
 const SAVE_PLAYLIST_MUTATION = `
@@ -106,6 +111,171 @@ mutation SavePlaylist($payload: PlaylistInput!, $teamId: String) {
 }
 `;
 
+const ADD_PLAYLIST_ITEMS_MUTATION = `
+mutation($id: String!, $payload: AddPlaylistItemsInput!, $teamId: String) {
+  addPlaylistItems(_id: $id, payload: $payload, teamId: $teamId) {
+    AWSS3ID
+    _id
+    appType
+    bucket
+    commonType
+    doc_pages
+    duration
+    embedLink
+    fileSize
+    fileType
+    filename
+    framerate
+    height
+    iFrameAllow
+    isCaption
+    isHide
+    isPasswordMaster
+    javascriptMaxRetries
+    javascriptRun
+    level22renderEngine
+    level22requireUserGesture
+    level22simulateTouch
+    level25renderEngine
+    level25requireUserGesture
+    level25simulateTouch
+    levelOtherrenderEngine
+    levelOtherrequireUserGesture
+    levelOthersimulateTouch
+    newWebView
+    normalDuration
+    refreshInterval
+    requestDesktopSite
+    slideDuration
+    speed
+    speedValue
+    srcDuration
+    status
+    subType
+    thumbnail
+    transition
+    type
+    video_1080p
+    video_bitrate
+    video_codec
+    webLink
+    webType
+    width
+    youtubeType
+  }
+}
+`;
+
+const REMOVE_PLAYLIST_ITEMS_MUTATION = `
+mutation($id: String!, $payload: RemovePlaylistItemsInput!, $teamId: String) {
+  removePlaylistItems(_id: $id, payload: $payload, teamId: $teamId) {
+    AWSS3ID
+    _id
+    appType
+    bucket
+    commonType
+    doc_pages
+    duration
+    embedLink
+    fileSize
+    fileType
+    filename
+    framerate
+    height
+    iFrameAllow
+    isCaption
+    isHide
+    isPasswordMaster
+    javascriptMaxRetries
+    javascriptRun
+    level22renderEngine
+    level22requireUserGesture
+    level22simulateTouch
+    level25renderEngine
+    level25requireUserGesture
+    level25simulateTouch
+    levelOtherrenderEngine
+    levelOtherrequireUserGesture
+    levelOthersimulateTouch
+    newWebView
+    normalDuration
+    refreshInterval
+    requestDesktopSite
+    slideDuration
+    speed
+    speedValue
+    srcDuration
+    status
+    subType
+    thumbnail
+    transition
+    type
+    video_1080p
+    video_bitrate
+    video_codec
+    webLink
+    webType
+    width
+    youtubeType
+  }
+}
+`;
+
+const UPDATE_PLAYLIST_ITEM_MUTATION = `
+mutation($id: String!, $payload: UpdatePlaylistItemsInput!, $teamId: String) {
+  updatePlaylistItems(_id: $id, payload: $payload, teamId: $teamId) {
+    AWSS3ID
+    _id
+    appType
+    bucket
+    commonType
+    doc_pages
+    duration
+    embedLink
+    fileSize
+    fileType
+    filename
+    framerate
+    height
+    iFrameAllow
+    isCaption
+    isHide
+    isPasswordMaster
+    javascriptMaxRetries
+    javascriptRun
+    level22renderEngine
+    level22requireUserGesture
+    level22simulateTouch
+    level25renderEngine
+    level25requireUserGesture
+    level25simulateTouch
+    levelOtherrenderEngine
+    levelOtherrequireUserGesture
+    levelOthersimulateTouch
+    newWebView
+    normalDuration
+    refreshInterval
+    requestDesktopSite
+    slideDuration
+    speed
+    speedValue
+    srcDuration
+    status
+    subType
+    thumbnail
+    transition
+    type
+    video_1080p
+    video_bitrate
+    video_codec
+    webLink
+    webType
+    width
+    youtubeType
+  }
+}
+`;
+
 const DELETE_PLAYLIST_MUTATION = `
 mutation($payload: DeleteObjectInput!, $teamId: String) {
   deleteObjects(payload: $payload, teamId: $teamId)
@@ -188,10 +358,26 @@ export class PlaylistsModule {
   async addAssetsToPlaylist(
     playlistId: string,
     assetIds: string[],
+    position: number,
     teamId?: string
-  ): Promise<Playlist> {
-    // TODO: Implement adding assets to playlist - mutation addPlaylistItems
-    throw new Error("Not implemented");
+  ): Promise<PlaylistItem[]> {
+    try {
+      const payload: AddPlaylistItemsInput = {
+        ids: assetIds,
+        pos: position,
+        type: "ASSET",
+      };
+
+      const variables = { id: playlistId, payload, teamId };
+      const data = await this.client.request<AddPlaylistItemsResponse>(
+        ADD_PLAYLIST_ITEMS_MUTATION,
+        variables
+      );
+
+      return data.addPlaylistItems;
+    } catch (e) {
+      this.handleGraphQLError(e, "add assets to playlist");
+    }
   }
 
   /**
@@ -202,28 +388,113 @@ export class PlaylistsModule {
    */
   async removeAssetsFromPlaylist(
     playlistId: string,
-    assetIds: string[],
+    pos: number[],
     teamId?: string
-  ): Promise<Playlist> {
-    // TODO: Implement removing assets from playlist - mutation removePlaylistItems
-    throw new Error("Not implemented");
+  ): Promise<boolean> {
+    try {
+      const payload: RemovePlaylistItemsInput = {
+        pos,
+      };
+
+      const variables = { id: playlistId, payload, teamId };
+      const data = await this.client.request<{ removePlaylistItems: boolean }>(
+        REMOVE_PLAYLIST_ITEMS_MUTATION,
+        variables
+      );
+
+      return data.removePlaylistItems;
+    } catch (e) {
+      this.handleGraphQLError(e, "remove assets from playlist");
+    }
+  }
+
+  /**
+   * Set the duration for a playlist item
+   * @param playlistId Playlist ID
+   * @param duration New duration in seconds
+   * @param teamId Optional team ID
+   */
+  async setPlaylistItemDuration(
+    playlistId: string,
+    duration: number,
+    teamId?: string
+  ): Promise<PlaylistItem[]> {
+    const input: ModifyPlaylistItemInput = {
+      duration,
+    };
+    return this.modifyPlaylistItem(playlistId, input, teamId);
+  }
+
+  /**
+   * Change the order/position of a playlist item
+   * @param playlistId Playlist ID
+   * @param position New position in playlist (0-based index)
+   * @param teamId Optional team ID
+   */
+  async setPlaylistItemOrder(
+    playlistId: string,
+    position: number,
+    teamId?: string
+  ): Promise<PlaylistItem[]> {
+    const input: ModifyPlaylistItemInput = {
+      position,
+    };
+    return this.modifyPlaylistItem(playlistId, input, teamId);
   }
 
   /**
    * Modify a playlist item's properties
    * @param playlistId Playlist ID
-   * @param itemId Playlist item ID
    * @param input ModifyPlaylistItemInput with updated item properties
    * @param teamId Optional team ID
+   * @private
    */
-  async modifyPlaylistItem(
+  private async modifyPlaylistItem(
     playlistId: string,
-    itemId: string,
     input: ModifyPlaylistItemInput,
     teamId?: string
-  ): Promise<Playlist> {
-    // TODO: Implement modifying playlist item - mutation updatePlaylistItems or movePlaylistItems
-    throw new Error("Not implemented");
+  ): Promise<PlaylistItem[]> {
+    try {
+      // Convert ModifyPlaylistItemInput to UpdatePlaylistItemsInput
+      let payload: UpdatePlaylistItemsInput;
+      if (input.duration !== undefined) {
+        payload = {
+          items: [
+            {
+              item: {
+                duration: input.duration,
+              },
+              pos: [0],
+            },
+          ],
+        };
+      } else if (input.position !== undefined) {
+        payload = {
+          items: [
+            {
+              item: {},
+              pos: [input.position],
+            },
+          ],
+        };
+      } else {
+        throw new Error("Either duration or position must be provided");
+      }
+
+      const variables = {
+        id: playlistId,
+        payload,
+        teamId,
+      };
+
+      const data = await this.client.request<{
+        updatePlaylistItems: PlaylistItem[];
+      }>(UPDATE_PLAYLIST_ITEM_MUTATION, variables);
+
+      return data.updatePlaylistItems;
+    } catch (e) {
+      this.handleGraphQLError(e, "modify playlist item");
+    }
   }
 
   /**
