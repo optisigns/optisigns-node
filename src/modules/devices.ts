@@ -128,6 +128,12 @@ export class DevicesModule {
     }
   }
 
+  /**
+   * Retrieves a device by its ID
+   * @param id - The unique identifier of the device
+   * @returns Promise resolving to the Device object
+   * @throws Error if device is not found or request fails
+   */
   async getDeviceById(id: string): Promise<Device> {
     const query = `
       query($id: String!) {

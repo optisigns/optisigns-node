@@ -18,8 +18,13 @@ async function testSDK() {
     // );
     // console.log("✅ Paired Device:", JSON.stringify(pairedDevice, null, 2));
 
+    const device = await sdk.devices.getDeviceById(
+      "671135a63cf4df001211fca0" as string
+    );
+    console.log("✅ Device:", JSON.stringify(device, null, 2));
+
     const unpairedDevice = await sdk.devices.unpairDevice(
-      "6423c6f994f90f00153db1f4" as string,
+      "671135a63cf4df001211fca0" as string,
       "1"
     );
     console.log("✅ Unpaired Device:", JSON.stringify(unpairedDevice, null, 2));
