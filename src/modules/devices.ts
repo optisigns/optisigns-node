@@ -218,7 +218,7 @@ export class DevicesModule {
     }
   }
 
-  async createDevice(payload: {
+  async pairDevice(payload: {
     deviceName: string;
     currentType?: "ASSET" | "PLAYLIST";
     currentAssetId?: string;
