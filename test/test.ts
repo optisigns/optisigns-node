@@ -9,25 +9,23 @@ async function testSDK() {
   });
 
   try {
-    // Add this new test before other operations
-    // console.log("🔥 Pairing device with code X2B2F1...");
-    // const pairedDevice = await sdk.devices.pairDevice(
-    //   "X2B2F1",
-    //   "",
-    //   "1" // teamId
-    // );
-    // console.log("✅ Paired Device:", JSON.stringify(pairedDevice, null, 2));
+    // Test updating content tag rule
+    console.log("🔥 Updating content tag rule...");
+    const deviceId = "671135a63cf4df001211fca0";
+    const teamId = "1";
+    const contentTagRuleId = "default";
 
-    const device = await sdk.devices.getDeviceById(
-      "671135a63cf4df001211fca0" as string
+    const updatedDevice = await sdk.devices.updateContentTagRule(
+      deviceId,
+      contentTagRuleId,
+      teamId
     );
-    console.log("✅ Device:", JSON.stringify(device, null, 2));
+    console.log("✅ Updated Device:", JSON.stringify(updatedDevice, null, 2));
 
-    const unpairedDevice = await sdk.devices.unpairDevice(
-      "671135a63cf4df001211fca0" as string,
-      "1"
-    );
-    console.log("✅ Unpaired Device:", JSON.stringify(unpairedDevice, null, 2));
+    // List all devices to verify changes
+    console.log(`🔥 Listing all devices...`);
+    const devices = await sdk.devices.listAllDevices();
+    console.log("✅ Devices Length", devices.length);
   } catch (error) {
     console.error("❌ Error:", error);
   }

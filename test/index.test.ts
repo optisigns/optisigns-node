@@ -64,12 +64,23 @@ describe("OptiSignsSDK", () => {
     });
 
     it("should properly integrate with devices module", () => {
+      // Basic device operations
       expect(sdk.devices.listAllDevices).toBeDefined();
-      expect(sdk.devices.findByDeviceName).toBeDefined();
+      expect(sdk.devices.getDeviceByName).toBeDefined();
       expect(sdk.devices.getDeviceById).toBeDefined();
-      expect(sdk.devices.updateDevice).toBeDefined();
+      
+      // Device management operations
+      expect(sdk.devices.moveDeviceToFolder).toBeDefined();
+      expect(sdk.devices.assignOperationalSchedule).toBeDefined();
+      expect(sdk.devices.updateContentTagRule).toBeDefined();
+      
+      // Pairing operations
       expect(sdk.devices.pairDevice).toBeDefined();
       expect(sdk.devices.unpairDevice).toBeDefined();
+
+      // Commented out Phase 2 features
+      // expect(sdk.devices.takeOverScreen).toBeDefined();
+      // expect(sdk.devices.rebootDevice).toBeDefined();
       // expect(sdk.devices.pushContentToDevice).toBeDefined();
     });
   });

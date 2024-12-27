@@ -1,62 +1,15 @@
 import { GraphQLClient } from "graphql-request";
-import {
-  Device,
-  DeviceQueryParams,
-  DeviceUpdateInput,
-  PairDeviceInput,
-} from "../types/device";
-
-// Move these type definitions to the top of the file, before the class
-export type PushToScreensType = "NOW" | "SCHEDULE" | "TEMPORARILY";
-export type MediaTypes = "ASSET" | "NONE" | "PLAYLIST" | "SCHEDULE";
-
-export interface TemporarilyFlashDevicesInput {
-  scheduleTimeMinutes: number; // Duration in minutes
-}
-
-export interface ScheduleGoLiveTimeDevicesInput {
-  afterExpire?: PushToScreensType; // Action after expiry
-  expireScheduleTime?: string; // Expiration time in ISO format
-  isCheckExpireTime?: boolean; // Whether to check expiration time
-  localTimezone: string; // Timezone, required
-  scheduleTime: string; // Scheduled time in ISO format
-}
-
-export interface PushToScreenPlaylistInput {
-  duration?: number; // Playlist duration in seconds
-  isAppendPlaylist?: boolean; // Whether to append to existing playlist
-}
-
-export interface PushToScreensInput {
-  addToPlaylist?: boolean;
-  currentAssetId?: string;
-  currentPlaylistId?: string;
-  currentScheduleId?: string;
-  currentType?: MediaTypes;
-  deviceIds: string[]; // Required: Device or screen IDs
-  documentDuration?: number;
-  engage?: boolean;
-  playlistData?: PushToScreenPlaylistInput;
-  scale?: string;
-  scheduleData?: ScheduleGoLiveTimeDevicesInput;
-  stretchAsset?: boolean;
-  tagRules?: string[];
-  tags?: string[];
-  teamId?: string;
-  temporarilyFlashData?: TemporarilyFlashDevicesInput;
-  type: PushToScreensType; // Type of push action
-}
-
-export interface PushToScreensMutationInput {
-  force?: boolean;
-  payload: PushToScreensInput;
-  teamId: string;
-}
+import { Device, PairDeviceInput, UpdateDeviceInput } from "../types/device";
 
 export class DevicesModule {
   constructor(private client: GraphQLClient) {}
 
-  // Add custom error class at the top of the class
+  /**
+   * Handles GraphQL errors in a consistent way across the module
+   * @param error - The error object from GraphQL
+   * @param operation - Description of the operation that failed
+   * @throws Error with formatted message
+   */
   private handleGraphQLError(error: any, operation: string): never {
     if (error.response?.errors?.[0]?.message) {
       throw new Error(
@@ -66,6 +19,11 @@ export class DevicesModule {
     throw new Error(`Failed to ${operation}`);
   }
 
+  /**
+   * Retrieves all devices accessible to the authenticated user
+   * @returns Promise<Device[]> Array of all devices
+   * @throws Error if the GraphQL query fails
+   */
   async listAllDevices(): Promise<Device[]> {
     const query = `
       query {
@@ -73,14 +31,73 @@ export class DevicesModule {
           page {
             edges {
               node {
-                _id
-                deviceName
                 UUID
-                pairingCode
-                currentType
+                _id
+                accountId
+                activationDate
+                aiVersion
+                backgroundType
+                createdAt
+                createdBy
+                creationDate
                 currentAssetId
                 currentPlaylistId
+                currentScheduleId
+                currentSelectionDate
+                currentType
+                device
+                deviceName
+                documentDuration
+                externalStorage
+                feature
+                featureData
+                flashAssetId
+                groupId
+                heartbeatInterval
+                isVirtual
+                isWebViewer
+                lastHeartBeat
+                lastTeamId
+                lastUpdatedBy
+                lastUpdatedDate
                 localAppVersion
+                location {
+                  coordinates
+                  name
+                  place_id
+                }
+                manufacturer
+                model
+                muted
+                name
+                orientation
+                original
+                os
+                osVersion
+                pairingCode
+                path
+                platform
+                pollingInterval
+                preloadId
+                recentAssignments
+                scale
+                scheduleGoLive
+                sendData
+                serialNo
+                status
+                statusContent
+                stretchAsset
+                syncPlay
+                tags
+                takeScreens
+                teamId
+                temporarily
+                totalStorage
+                typeBuild
+                usedStorage
+                utilsOnline
+                utilsVersion
+                videoPlayerType
               }
             }
           }
@@ -97,21 +114,86 @@ export class DevicesModule {
     }
   }
 
-  async findByDeviceName(name: string): Promise<Device[]> {
+  /**
+   * Searches for devices by name
+   * @param name - The device name to search for
+   * @returns Promise<Device[]> Array of matching devices
+   * @throws Error if the GraphQL query fails
+   */
+  async getDeviceByName(name: string): Promise<Device[]> {
     const query = `
       query($name: String!) {
         devices(query: { deviceName: $name }) {
           page {
             edges {
               node {
-                _id
-                deviceName
                 UUID
-                pairingCode
-                currentType
+                _id
+                accountId
+                activationDate
+                aiVersion
+                backgroundType
+                createdAt
+                createdBy
+                creationDate
                 currentAssetId
                 currentPlaylistId
+                currentScheduleId
+                currentSelectionDate
+                currentType
+                device
+                deviceName
+                documentDuration
+                externalStorage
+                feature
+                featureData
+                flashAssetId
+                groupId
+                heartbeatInterval
+                isVirtual
+                isWebViewer
+                lastHeartBeat
+                lastTeamId
+                lastUpdatedBy
+                lastUpdatedDate
                 localAppVersion
+                location {
+                  coordinates
+                  name
+                  place_id
+                }
+                manufacturer
+                model
+                muted
+                name
+                orientation
+                original
+                os
+                osVersion
+                pairingCode
+                path
+                platform
+                pollingInterval
+                preloadId
+                recentAssignments
+                scale
+                scheduleGoLive
+                sendData
+                serialNo
+                status
+                statusContent
+                stretchAsset
+                syncPlay
+                tags
+                takeScreens
+                teamId
+                temporarily
+                totalStorage
+                typeBuild
+                usedStorage
+                utilsOnline
+                utilsVersion
+                videoPlayerType
               }
             }
           }
@@ -141,14 +223,73 @@ export class DevicesModule {
           page {
             edges {
               node {
+                  UUID
                 _id
-                deviceName
-                UUID
-                pairingCode
-                currentType
+                accountId
+                activationDate
+                aiVersion
+                backgroundType
+                createdAt
+                createdBy
+                creationDate
                 currentAssetId
                 currentPlaylistId
+                currentScheduleId
+                currentSelectionDate
+                currentType
+                device
+                deviceName
+                documentDuration
+                externalStorage
+                feature
+                featureData
+                flashAssetId
+                groupId
+                heartbeatInterval
+                isVirtual
+                isWebViewer
+                lastHeartBeat
+                lastTeamId
+                lastUpdatedBy
+                lastUpdatedDate
                 localAppVersion
+                location {
+                  coordinates
+                  name
+                  place_id
+                }
+                manufacturer
+                model
+                muted
+                name
+                orientation
+                original
+                os
+                osVersion
+                pairingCode
+                path
+                platform
+                pollingInterval
+                preloadId
+                recentAssignments
+                scale
+                scheduleGoLive
+                sendData
+                serialNo
+                status
+                statusContent
+                stretchAsset
+                syncPlay
+                tags
+                takeScreens
+                teamId
+                temporarily
+                totalStorage
+                typeBuild
+                usedStorage
+                utilsOnline
+                utilsVersion
+                videoPlayerType
               }
             }
           }
@@ -166,67 +307,105 @@ export class DevicesModule {
       }
       return devices[0];
     } catch (error: any) {
-      console.error(error);
       throw this.handleGraphQLError(error, "get device by id");
     }
   }
 
-  async updateDevice(
+  private async updateDevice(
     id: string,
-    payload: {
-      deviceName?: string;
-      currentType?: "ASSET" | "PLAYLIST";
-      currentAssetId?: string;
-      orientation?: "LANDSCAPE" | "PORTRAIT";
-    }
+    payload: UpdateDeviceInput,
+    teamId: string
   ): Promise<Device> {
     try {
-      // Check if the device exists
       const existingDevice = await this.getDeviceById(id);
       if (!existingDevice) {
         throw new Error(`Device with id ${id} does not exist.`);
       }
 
-      /**
-       * TODO: Current playlist id + current schedule id - this is how you takeover the screen (no need to push content)
-       * For moving folders updateDevice with PATH in the payload, just go to screens -> devices and check for the device and it's metadata associated with it
-       * assign operational schedule is also another field in update screen - feature.scheduleOpsId
-       * update content tag rule feature.contentTagRuleId
-       */
-
       const mutation = `
-        mutation(
-          $_id: String!, 
-          $deviceName: String,
-          $currentType: MEDIA_TYPES,
-          $currentAssetId: String,
-          $orientation: ORIENTATION_TYPES
-        ) {
-          updateDevice(
-            _id: $_id, 
-            payload: {
-              deviceName: $deviceName,
-              currentType: $currentType,
-              currentAssetId: $currentAssetId,
-              orientation: $orientation
-            }
-          ) {
+        mutation($id: String!, $payload: UpdateDeviceInput!, $teamId: String!) {
+          updateDevice(_id: $id, payload: $payload, teamId: $teamId) {
             _id
             deviceName
             currentType
             currentAssetId
+            currentPlaylistId
+            currentScheduleId
             orientation
+            path
+            feature
+            tags
           }
         }
       `;
+
       const response = (await this.client.request(mutation, {
-        _id: id,
-        ...payload,
+        id,
+        payload,
+        teamId,
       })) as { updateDevice: Device };
+
       return response.updateDevice;
     } catch (error: any) {
       throw this.handleGraphQLError(error, "update device");
     }
+  }
+
+  /**
+   * Moves a device to a different folder in the OptiSigns folder hierarchy
+   * @param id - The ID of the device to move
+   * @param folderPath - The target folder path starting with / (e.g. "/Marketing/Displays").
+   *                     The folder must already exist. Use "/" for root folder.
+   * @param teamId - The team ID that owns the device
+   * @returns The updated device object
+   * @throws Error if the folder does not exist or if the device cannot be moved
+   */
+  async moveDeviceToFolder(
+    id: string,
+    folderPath: string,
+    teamId: string
+  ): Promise<Device> {
+    return this.updateDevice(
+      id,
+      {
+        path: folderPath,
+      },
+      teamId
+    );
+  }
+
+  // Helper method to assign operational schedule
+  async assignOperationalSchedule(
+    id: string,
+    scheduleOpsId: string,
+    teamId: string
+  ): Promise<Device> {
+    return this.updateDevice(
+      id,
+      {
+        feature: {
+          scheduleOpsId,
+        },
+      },
+      teamId
+    );
+  }
+
+  // Helper method to update content tag rules
+  async updateContentTagRule(
+    id: string,
+    contentTagRuleId: string,
+    teamId: string
+  ): Promise<Device> {
+    return this.updateDevice(
+      id,
+      {
+        feature: {
+          contentTagRuleId,
+        },
+      },
+      teamId
+    );
   }
 
   /**
@@ -303,7 +482,37 @@ export class DevicesModule {
     }
   }
 
-  // TODO: These are phase 2 MDM command
+  // ============================================
+  // TODO: Phase 2 MDM Commands (Planned Features)
+  // ============================================
+
+  /**
+   * @todo Implement in Phase 2 - MDM command for taking over screen
+   */
+  // async takeOverScreen(
+  //   id: string,
+  //   input: {
+  //     currentPlaylistId?: string;
+  //     currentScheduleId?: string;
+  //   },
+  //   teamId: string
+  // ): Promise<Device> {
+  //   return this.updateDevice(
+  //     id,
+  //     {
+  //       currentType: input.currentPlaylistId
+  //         ? MEDIA_TYPES.PLAYLIST
+  //         : MEDIA_TYPES.SCHEDULE,
+  //       currentPlaylistId: input.currentPlaylistId,
+  //       currentScheduleId: input.currentScheduleId,
+  //     },
+  //     teamId
+  //   );
+  // }
+
+  /**
+   * @todo Implement in Phase 2 - MDM command for rebooting device
+   */
   // async rebootDevice(id: string): Promise<boolean> {
   //   const mutation = `
   //     mutation($id: String!) {
@@ -320,7 +529,9 @@ export class DevicesModule {
   //   }
   // }
 
-  // Updated Method
+  /**
+   * @todo Implement in Phase 2 - MDM command for pushing content
+   */
   // async pushContentToDevice(
   //   deviceId: string,
   //   contentId: string,

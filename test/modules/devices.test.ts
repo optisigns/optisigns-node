@@ -5,6 +5,7 @@ import {
   mockDeviceDetails,
   mockErrorResponses,
 } from "../fixtures/deviceResponses";
+import { Device } from "../../src/types/device";
 
 describe("DevicesModule", () => {
   let devicesModule: DevicesModule;
@@ -45,7 +46,7 @@ describe("DevicesModule", () => {
         },
       });
 
-      const devices = await devicesModule.findByDeviceName(deviceName);
+      const devices = await devicesModule.getDeviceByName(deviceName);
       expect(devices[0].deviceName).toBe(deviceName);
     });
   });
@@ -62,57 +63,6 @@ describe("DevicesModule", () => {
     });
   });
 
-  describe("update", () => {
-    it("should update device successfully", async () => {
-      const deviceId = "1";
-      const updateData = { deviceName: "Updated Device" };
-      const existingDevice = mockDevicesList.devices.page.edges[0].node;
-      const updatedDevice = {
-        ...existingDevice,
-        deviceName: "Updated Device",
-      };
-
-      // Mock the getDeviceById request
-      mockClient.request.mockResolvedValueOnce({
-        devices: mockDevicesList.devices,
-      });
-      // Mock the updateDevice request
-      mockClient.request.mockResolvedValueOnce({ updateDevice: updatedDevice });
-
-      const result = await devicesModule.updateDevice(deviceId, updateData);
-      expect(result.deviceName).toBe(updateData.deviceName);
-    });
-
-    it("should handle errors when device does not exist", async () => {
-      const deviceId = "1";
-      const updateData = { deviceName: "Updated Device" };
-
-      // Mock the getDeviceById request to return null
-      mockClient.request.mockResolvedValueOnce({ device: null });
-
-      await expect(
-        devicesModule.updateDevice(deviceId, updateData)
-      ).rejects.toThrow("Failed to update device");
-    });
-
-    it("should handle update errors", async () => {
-      const deviceId = "1";
-      const updateData = { deviceName: "Updated Device" };
-      const existingDevice = mockDevicesList.devices.page.edges[0].node;
-
-      // Mock the getDeviceById request
-      mockClient.request.mockResolvedValueOnce({ device: existingDevice });
-      // Mock the updateDevice request to fail
-      mockClient.request.mockRejectedValueOnce({
-        response: { errors: [{ message: "Update failed" }] },
-      });
-
-      await expect(
-        devicesModule.updateDevice(deviceId, updateData)
-      ).rejects.toThrow("Failed to update device");
-    });
-  });
-
   describe("delete", () => {
     it("should delete device successfully", async () => {
       mockClient.request.mockResolvedValueOnce({ deleteDevice: undefined });
@@ -126,48 +76,131 @@ describe("DevicesModule", () => {
     });
   });
 
-  // describe("pushContentToDevice", () => {
-  //   it("should push content to device successfully with NOW type", async () => {
-  //     mockClient.request.mockResolvedValueOnce({ pushToScreens: true });
-  //     const result = await devicesModule.pushContentToDevice(
-  //       "device-1",
-  //       "content-1",
-  //       "team-1"
-  //     );
-  //     expect(result).toBe(true);
-  //   });
+  describe("moveDeviceToFolder", () => {
+    it("should move device to new folder successfully", async () => {
+      const deviceId = "1";
+      const folderPath = "/Marketing/Displays";
+      const existingDevice = mockDevicesList.devices.page.edges[0].node;
+      const updatedDevice = {
+        ...existingDevice,
+        path: folderPath,
+      };
 
-  //   it("should push scheduled content successfully", async () => {
-  //     mockClient.request.mockResolvedValueOnce({ pushToScreens: true });
-  //     const scheduleTime = new Date().toISOString();
-  //     const result = await devicesModule.pushContentToDevice(
-  //       "device-1",
-  //       "content-1",
-  //       "team-1",
-  //       "SCHEDULE",
-  //       undefined,
-  //       scheduleTime
-  //     );
-  //     expect(result).toBe(true);
-  //   });
+      // Mock the getDeviceById request
+      mockClient.request.mockResolvedValueOnce({
+        devices: mockDevicesList.devices,
+      });
+      // Mock the updateDevice request
+      mockClient.request.mockResolvedValueOnce({ updateDevice: updatedDevice });
 
-  //   it("should push temporary content successfully", async () => {
-  //     mockClient.request.mockResolvedValueOnce({ pushToScreens: true });
-  //     const result = await devicesModule.pushContentToDevice(
-  //       "device-1",
-  //       "content-1",
-  //       "team-1",
-  //       "TEMPORARILY",
-  //       30
-  //     );
-  //     expect(result).toBe(true);
-  //   });
+      const result = await devicesModule.moveDeviceToFolder(
+        deviceId,
+        folderPath,
+        "team-1"
+      );
+      expect(result.path).toBe(folderPath);
+    });
+  });
 
-  // it("should handle errors when pushing content", async () => {
-  //   mockClient.request.mockRejectedValueOnce(new Error("Push failed"));
-  //   await expect(
-  //     devicesModule.pushContentToDevice("device-1", "content-1", "team-1")
-  //   ).rejects.toThrow("Failed to push content to device");
-  // });
+  describe("assignOperationalSchedule", () => {
+    it("should assign operational schedule successfully", async () => {
+      const deviceId = "1";
+      const scheduleOpsId = "schedule-1";
+      const existingDevice = mockDevicesList.devices.page.edges[0].node;
+      const updatedDevice = {
+        ...existingDevice,
+        feature: { scheduleOpsId },
+      };
+
+      // Mock the getDeviceById request
+      mockClient.request.mockResolvedValueOnce({
+        devices: mockDevicesList.devices,
+      });
+      // Mock the updateDevice request
+      mockClient.request.mockResolvedValueOnce({ updateDevice: updatedDevice });
+
+      const result = await devicesModule.assignOperationalSchedule(
+        deviceId,
+        scheduleOpsId,
+        "team-1"
+      );
+      expect((result.feature as { scheduleOpsId: string }).scheduleOpsId).toBe(scheduleOpsId);
+    });
+  });
+
+  describe("updateContentTagRule", () => {
+    it("should update content tag rule successfully", async () => {
+      const deviceId = "1";
+      const contentTagRuleId = "rule-1";
+      const existingDevice = mockDevicesList.devices.page.edges[0].node;
+      const updatedDevice = {
+        ...existingDevice,
+        feature: { contentTagRuleId },
+      };
+
+      // Mock the getDeviceById request
+      mockClient.request.mockResolvedValueOnce({
+        devices: mockDevicesList.devices,
+      });
+      // Mock the updateDevice request
+      mockClient.request.mockResolvedValueOnce({ updateDevice: updatedDevice });
+
+      const result = await devicesModule.updateContentTagRule(
+        deviceId,
+        contentTagRuleId,
+        "team-1"
+      );
+      expect((result.feature as { contentTagRuleId: string }).contentTagRuleId).toBe(contentTagRuleId);
+    });
+  });
+
+  describe("pairDevice", () => {
+    it("should pair device successfully", async () => {
+      const pairingCode = "123456";
+      const path = "/Marketing";
+      const teamId = "team-1";
+      const pairedDevice = {
+        _id: "1",
+        deviceName: "New Device",
+        UUID: "uuid-1",
+        pairingCode,
+        currentType: "PLAYLIST",
+        currentAssetId: "asset-1",
+        currentPlaylistId: "playlist-1",
+        localAppVersion: "1.0.0",
+        orientation: "landscape"
+      };
+
+      mockClient.request.mockResolvedValueOnce({ pairDevice: pairedDevice });
+
+      const result = await devicesModule.pairDevice(pairingCode, path, teamId);
+      expect(result).toEqual(pairedDevice);
+    });
+
+    it("should handle errors when pairing device", async () => {
+      mockClient.request.mockRejectedValueOnce({
+        response: { errors: [{ message: "Invalid pairing code" }] }
+      });
+
+      await expect(devicesModule.pairDevice("invalid", "", "team-1"))
+        .rejects.toThrow("Failed to pair device: Invalid pairing code");
+    });
+  });
+
+  describe("unpairDevice", () => {
+    it("should unpair device successfully", async () => {
+      mockClient.request.mockResolvedValueOnce({ unPairDevices: true });
+      const result = await devicesModule.unpairDevice("1", "team-1");
+      expect(result).toBe(true);
+    });
+
+    it("should handle errors when unpairing device", async () => {
+      mockClient.request.mockRejectedValueOnce({
+        response: { errors: [{ message: "Device not found" }] }
+      });
+
+      await expect(devicesModule.unpairDevice("invalid", "team-1"))
+        .rejects.toThrow("Failed to delete device: Device not found");
+    });
+  });
 });
-// });
