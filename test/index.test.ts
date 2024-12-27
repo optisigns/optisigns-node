@@ -68,12 +68,12 @@ describe("OptiSignsSDK", () => {
       expect(sdk.devices.listAllDevices).toBeDefined();
       expect(sdk.devices.getDeviceByName).toBeDefined();
       expect(sdk.devices.getDeviceById).toBeDefined();
-      
+
       // Device management operations
       expect(sdk.devices.moveDeviceToFolder).toBeDefined();
       expect(sdk.devices.assignOperationalSchedule).toBeDefined();
       expect(sdk.devices.updateContentTagRule).toBeDefined();
-      
+
       // Pairing operations
       expect(sdk.devices.pairDevice).toBeDefined();
       expect(sdk.devices.unpairDevice).toBeDefined();
@@ -82,6 +82,23 @@ describe("OptiSignsSDK", () => {
       // expect(sdk.devices.takeOverScreen).toBeDefined();
       // expect(sdk.devices.rebootDevice).toBeDefined();
       // expect(sdk.devices.pushContentToDevice).toBeDefined();
+    });
+  });
+
+  describe("assets module", () => {
+    it("should initialize assets module", () => {
+      expect(sdk.assets).toBeDefined();
+      expect(sdk.assets).toHaveProperty("client");
+    });
+
+    it("should properly integrate with assets module", () => {
+      // Asset retrieval operations
+      expect(sdk.assets.uploadFileAsset).toBeDefined();
+      expect(sdk.assets.createWebsiteAppAsset).toBeDefined();
+      expect(sdk.assets.modifyAssetSettings).toBeDefined();
+
+      // Asset management operations
+      expect(sdk.assets.deleteAssetById).toBeDefined();
     });
   });
 });

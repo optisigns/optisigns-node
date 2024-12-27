@@ -190,3 +190,50 @@ export type AssetInput = {
   webLink?: string;
   webType?: string;
 };
+
+// Type Definitions
+export type AssetCategory = "IMAGE" | "VIDEO" | "WEBSITE" | "YOUTUBE";
+
+export interface UploadFileInput {
+  fileName: string;
+  fileType: string;
+  fileContent: string; // Base64 encoded string
+}
+
+export interface CreateWebsiteAppAssetInput {
+  url: string;
+  title: string;
+  description?: string;
+}
+
+export interface ModifyAssetSettingsInput {
+  name?: string;
+  metadata?: Record<string, any>;
+  // Add other settings as needed based on asset type
+}
+
+export interface ScheduleAssetExpirationInput {
+  assetId: string;
+  expirationTime: string; // ISO format
+  actionAfterExpire?: "DELETE" | "ARCHIVE" | "NONE";
+  [key: string]: any;
+}
+
+export interface PushToScreensInput {
+  // Include if assets need to be pushed to screens
+  deviceIds: string[];
+  assetIds: string[];
+  // Other relevant fields
+}
+
+export interface PushToScreensMutationInput {
+  force?: boolean;
+  payload: PushToScreensInput;
+  teamId: string;
+}
+
+// Device Type Definition
+
+export interface Variables {
+  [key: string]: any;
+}

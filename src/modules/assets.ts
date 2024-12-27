@@ -1,57 +1,25 @@
 import { GraphQLClient } from "graphql-request";
-import { Asset } from "../types/asset";
-
-// Type Definitions
-export type AssetCategory = "IMAGE" | "VIDEO" | "WEBSITE" | "YOUTUBE";
-
-export interface UploadFileInput {
-  fileName: string;
-  fileType: string;
-  fileContent: string; // Base64 encoded string
-}
-
-export interface CreateWebsiteAppAssetInput {
-  url: string;
-  title: string;
-  description?: string;
-}
-
-export interface ModifyAssetSettingsInput {
-  name?: string;
-  metadata?: Record<string, any>;
-  // Add other settings as needed based on asset type
-}
-
-export interface ScheduleAssetExpirationInput {
-  assetId: string;
-  expirationTime: string; // ISO format
-  actionAfterExpire?: "DELETE" | "ARCHIVE" | "NONE";
-  [key: string]: any;
-}
-
-export interface PushToScreensInput {
-  // Include if assets need to be pushed to screens
-  deviceIds: string[];
-  assetIds: string[];
-  // Other relevant fields
-}
-
-export interface PushToScreensMutationInput {
-  force?: boolean;
-  payload: PushToScreensInput;
-  teamId: string;
-}
-
-// Device Type Definition
-
-export interface Variables {
-  [key: string]: any;
-}
+import {
+  Asset,
+  AssetCategory,
+  UploadFileInput,
+  CreateWebsiteAppAssetInput,
+  ModifyAssetSettingsInput,
+  ScheduleAssetExpirationInput,
+  PushToScreensInput,
+  PushToScreensMutationInput,
+  Variables,
+} from "../types/asset";
 
 export class AssetsModule {
   constructor(private client: GraphQLClient) {}
 
-  // Custom Error Handler
+  /**
+   * Handles GraphQL errors in a consistent way across the module
+   * @param error - The error object from GraphQL
+   * @param operation - Description of the operation that failed
+   * @throws Error with formatted message
+   */
   private handleGraphQLError(error: any, operation: string): never {
     if (error.response?.errors?.[0]?.message) {
       throw new Error(
@@ -62,11 +30,14 @@ export class AssetsModule {
   }
 
   /**
-   * Create/Upload a file asset
-   * @param input - UploadFileInput
+   * Create/Upload a file asset from either a local file path or S3 presigned URL
+   * @param filePath - Path to local file or S3 presigned URL
+   * @param teamId - Team ID to associate the asset with
+   * @returns Promise resolving to the created Asset
    */
   async uploadFileAsset(
     filePath: string,
+    fileName: string,
     teamId: string = "1"
   ): Promise<Asset> {
     const uploadOptionsQuery = `
@@ -92,8 +63,11 @@ export class AssetsModule {
       formData.append("signature", uploadOptions.signature);
 
       // Read and append file
-      const file = await fetch(filePath).then((r) => r.blob());
-      formData.append("file", file, filePath.split("/").pop());
+      let file: Blob;
+      let filename: string;
+      file = await fetch(filePath).then((r) => r.blob());
+      filename = filePath.split("/").pop() || "unknown";
+      formData.append("file", file, filename);
 
       // Upload file
       const uploadResponse = await fetch(
@@ -117,14 +91,126 @@ export class AssetsModule {
       const createAssetMutation = `
         mutation saveAsset($payload: AssetInput!, $teamId: String) {
           saveAsset(payload: $payload, teamId: $teamId) {
+            AWSS3ID
             _id
-            type
-            originalFileName
+            accountId
+            advancedOptions
+            appType
+            assetMeta
+            assetRootId
+            bucket
+            changeContent
+            commonType
+            confidentLevel
             createdAt
-            status
+            createdBy
+            currentAssetId
+            currentPlaylistId
+            currentScheduleId
+            delay
+            doc_pages
+            documentDuration
+            duration
+            durationPage
+            embedLink
+            engage
+            faceSize
+            fileExtension
+            fileSize
+            fileType
+            filename
+            framerate
+            groupId
+            height
+            iFrameAllow
+            isCaption
+            isDisable
+            isHide
+            isScheduleDefault
+            isSendDataOnly
+            kioskUrl
+            lastTeamId
+            lastUpdatedBy
             lastUpdatedDate
-            teamId
+            leastDuration
+            meta
+            model
+            name
+            num_pages
+            oldRules
+            options
+            orientation
+            originalAWSS3ID
+            originalFileExtension
+            originalFileName
+            originalFileSize
             path
+            placeGeometry
+            placeId
+            playbackType
+            playlistId
+            postsType
+            preloadKioskUrl
+            processId
+            refreshInterval
+            requestDesktopSite
+            restDuration
+            returnedUrl
+            rules
+            scale
+            screenZones {
+              currentAssetId
+              currentPlaylistId
+              currentScheduleId
+              currentSelectionDate
+              currentType
+              documentDuration
+              fitAsset
+              height
+              heightPixel
+              id
+              left
+              leftPixel
+              name
+              playbackType
+              scale
+              stretchAsset
+              top
+              topPixel
+              width
+              widthPixel
+            }
+            serviceType
+            shareTos
+            showTouchHereIcon
+            snapshotDuration
+            snapshotResolution
+            socialProfile
+            status
+            stretchAsset
+            subType
+            tags
+            targetURL
+            teamId
+            thumbnail
+            timeout
+            touchIconBlinkingRate
+            touchScreenIcon
+            touchScreenIconAssetId
+            touchScreenIconLocation
+            touchScreenIconSize
+            touchScreenIconUrl
+            touchScreenIconUrlDefault
+            type
+            updateDisplay
+            version
+            video_1080p
+            video_bitrate
+            video_codec
+            webLink
+            webType
+            width
+            youtubeType
           }
         }
       `;
@@ -132,7 +218,7 @@ export class AssetsModule {
       const uploadItem = assembly.uploads[0];
       const assetPayload = {
         type: "file",
-        originalFileName: uploadItem.name,
+        originalFileName: fileName,
         processId: assembly.assembly_id,
         status: "converting",
         path: null,
@@ -147,7 +233,6 @@ export class AssetsModule {
 
       return response.saveAsset;
     } catch (error: any) {
-      console.error("Upload File Asset Error:", error); // Log the error for debugging
       throw this.handleGraphQLError(error, "upload file asset");
     }
   }
@@ -161,16 +246,128 @@ export class AssetsModule {
     teamId: string
   ): Promise<Asset> {
     const mutation = `
-      mutation saveAsset($payload: AssetInput!, $teamId: String!) {
+      mutation saveAsset($payload: AssetInput!, $teamId: String) {
         saveAsset(payload: $payload, teamId: $teamId) {
+          AWSS3ID
           _id
-          type
-          originalFileName
+          accountId
+          advancedOptions
+          appType
+          assetMeta
+          assetRootId
+          bucket
+          changeContent
+          commonType
+          confidentLevel
           createdAt
-          status
+          createdBy
+          currentAssetId
+          currentPlaylistId
+          currentScheduleId
+          delay
+          doc_pages
+          documentDuration
+          duration
+          durationPage
+          embedLink
+          engage
+          faceSize
+          fileExtension
+          fileSize
+          fileType
+          filename
+          framerate
+          groupId
+          height
+          iFrameAllow
+          isCaption
+          isDisable
+          isHide
+          isScheduleDefault
+          isSendDataOnly
+          kioskUrl
+          lastTeamId
+          lastUpdatedBy
           lastUpdatedDate
-          teamId
+          leastDuration
+          meta
+          model
+          name
+          num_pages
+          oldRules
+          options
+          orientation
+          originalAWSS3ID
+          originalFileExtension
+          originalFileName
+          originalFileSize
           path
+          placeGeometry
+          placeId
+          playbackType
+          playlistId
+          postsType
+          preloadKioskUrl
+          processId
+          refreshInterval
+          requestDesktopSite
+          restDuration
+          returnedUrl
+          rules
+          scale
+          screenZones {
+            currentAssetId
+            currentPlaylistId
+            currentScheduleId
+            currentSelectionDate
+            currentType
+            documentDuration
+            fitAsset
+            height
+            heightPixel
+            id
+            left
+            leftPixel
+            name
+            playbackType
+            scale
+            stretchAsset
+            top
+            topPixel
+            width
+            widthPixel
+          }
+          serviceType
+          shareTos
+          showTouchHereIcon
+          snapshotDuration
+          snapshotResolution
+          socialProfile
+          status
+          stretchAsset
+          subType
+          tags
+          targetURL
+          teamId
+          thumbnail
+          timeout
+          touchIconBlinkingRate
+          touchScreenIcon
+          touchScreenIconAssetId
+          touchScreenIconLocation
+          touchScreenIconSize
+          touchScreenIconUrl
+          touchScreenIconUrlDefault
+          type
+          updateDisplay
+          version
+          video_1080p
+          video_bitrate
+          video_codec
+          webLink
+          webType
+          width
+          youtubeType
         }
       }
     `;
@@ -178,9 +375,8 @@ export class AssetsModule {
       const response = (await this.client.request(mutation, {
         teamId: teamId,
         payload: {
-          // TODO: In syncup discuss possible changes to this
           type: "web",
-          subType: "static",
+          subType: "static", 
           path: null,
           webLink: input.url,
           originalFileName: input.title,

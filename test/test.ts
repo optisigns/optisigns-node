@@ -9,23 +9,33 @@ async function testSDK() {
   });
 
   try {
-    // Test updating content tag rule
-    console.log("🔥 Updating content tag rule...");
-    const deviceId = "671135a63cf4df001211fca0";
+    // Test uploading a file asset
+    console.log("🔥 Uploading file asset...");
     const teamId = "1";
-    const contentTagRuleId = "default";
+    const fileName = "sample.jpg";
+    const filePath = "https://picsum.photos/200/300"; // Make sure this file exists
 
-    const updatedDevice = await sdk.devices.updateContentTagRule(
-      deviceId,
-      contentTagRuleId,
+    console.log(`🔥 Uploading file asset: ${filePath}`);
+
+    const uploadedAsset = await sdk.assets.uploadFileAsset(
+      filePath,
+      fileName,
       teamId
     );
-    console.log("✅ Updated Device:", JSON.stringify(updatedDevice, null, 2));
+    console.log("✅ Uploaded Asset:", JSON.stringify(uploadedAsset, null, 2));
 
-    // List all devices to verify changes
-    console.log(`🔥 Listing all devices...`);
-    const devices = await sdk.devices.listAllDevices();
-    console.log("✅ Devices Length", devices.length);
+    console.log("🔥 Creating website app asset...");
+    const websiteAppAsset = await sdk.assets.createWebsiteAppAsset(
+      {
+        url: "https://www.google.com",
+        title: "Google",
+      },
+      teamId
+    );
+    console.log(
+      "✅ Created Website App Asset:",
+      JSON.stringify(websiteAppAsset, null, 2)
+    );
   } catch (error) {
     console.error("❌ Error:", error);
   }
