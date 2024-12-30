@@ -138,9 +138,9 @@ export class AssetsModule {
 
   /**
    * Handles GraphQL errors in a consistent way across the module
-   * @param error - The error object from GraphQL
-   * @param operation - Description of the operation that failed
-   * @throws Error with formatted message
+   * @param error - The error object returned from GraphQL operations
+   * @param operation - Description of the operation that failed (e.g., "upload file asset")
+   * @throws Error with a formatted message containing the GraphQL error details if available
    */
   private handleGraphQLError(error: any, operation: string): never {
     if (error.response?.errors?.[0]?.message) {
@@ -152,10 +152,12 @@ export class AssetsModule {
   }
 
   /**
-   * Create/Upload a file asset from either a local file path or S3 presigned URL
-   * @param filePath - Path to local file or S3 presigned URL
-   * @param teamId - Team ID to associate the asset with
-   * @returns Promise resolving to the created Asset
+   * Creates and uploads a file asset to the system
+   * @param filePath - Path to local file or S3 presigned URL. Can be either a local file path or a remote URL
+   * @param fileName - The desired name for the file in the system
+   * @param teamId - Team ID to associate the asset with (defaults to "1")
+   * @returns Promise resolving to the created Asset object
+   * @throws Error if upload fails or GraphQL operation fails
    */
   async uploadFileAsset(
     filePath: string,
@@ -247,8 +249,13 @@ export class AssetsModule {
   }
 
   /**
-   * Create a Website App Asset
-   * @param input - CreateWebsiteAppAssetInput
+   * Creates a new Website App Asset in the system
+   * @param input - CreateWebsiteAppAssetInput containing website details:
+   *                - url: The website URL
+   *                - title: Display title for the website asset
+   * @param teamId - Team ID to associate the asset with
+   * @returns Promise resolving to the created Asset object
+   * @throws Error if creation fails or GraphQL operation fails
    */
   async createWebsiteAppAsset(
     input: CreateWebsiteAppAssetInput,
@@ -276,10 +283,12 @@ export class AssetsModule {
   }
 
   /**
-   * Modify asset settings
-   * @param id - Asset ID
-   * @param settings - ModifyAssetSettingsInput
-   * @param teamId - Optional Team ID
+   * Modifies settings for an existing asset
+   * @param id - Asset ID to modify
+   * @param settings - Partial AssetInput containing the settings to update
+   * @param teamId - Optional Team ID for authorization
+   * @returns Promise resolving to the updated Asset object
+   * @throws Error if modification fails or GraphQL operation fails
    */
   async modifyAssetSettings(
     id: string,
@@ -297,7 +306,15 @@ export class AssetsModule {
     // throw new Error(`Unsupported asset type: ${assetDetail.type}`);
   }
 
-  // Private method to modify file asset settings
+  /**
+   * Internal method to modify settings specific to file-type assets
+   * @param id - Asset ID to modify
+   * @param settings - Partial AssetInput containing the settings to update
+   * @param teamId - Optional Team ID for authorization
+   * @returns Promise resolving to the updated Asset object
+   * @throws Error if modification fails or GraphQL operation fails
+   * @private
+   */
   private async modifyFileAssetSettings(
     id: string,
     settings: Partial<AssetInput>,
@@ -320,7 +337,15 @@ export class AssetsModule {
     }
   }
 
-  // Private method to modify website asset settings
+  /**
+   * Internal method to modify settings specific to website-type assets
+   * @param id - Asset ID to modify
+   * @param settings - ModifyAssetSettingsInput containing the settings to update
+   * @param teamId - Optional Team ID for authorization
+   * @returns Promise resolving to the updated Asset object
+   * @throws Error if modification fails or GraphQL operation fails
+   * @private
+   */
   private async modifyWebsiteAssetSettings(
     id: string,
     settings: ModifyAssetSettingsInput,
@@ -343,7 +368,14 @@ export class AssetsModule {
     }
   }
 
-  // Private method to get asset details
+  /**
+   * Retrieves detailed information about a specific asset
+   * @param id - Asset ID to retrieve details for
+   * @param teamId - Optional Team ID for authorization
+   * @returns Promise resolving to the Asset object with full details
+   * @throws Error if asset not found or GraphQL operation fails
+   * @private
+   */
   private async getAssetDetail(id: string, teamId?: string): Promise<Asset> {
     const query = `
       query($id: String!, $teamId: String) {
@@ -370,9 +402,11 @@ export class AssetsModule {
   }
 
   /**
-   * Delete an asset by ID using deleteObjects mutation
-   * @param id - Asset ID
+   * Permanently deletes an asset from the system
+   * @param id - Asset ID to delete
    * @param teamId - Team ID for authorization
+   * @returns Promise resolving to boolean indicating success
+   * @throws Error if deletion fails or GraphQL operation fails
    */
   async deleteAssetById(id: string, teamId: string): Promise<boolean> {
     const mutation = `
