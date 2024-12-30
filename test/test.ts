@@ -24,45 +24,13 @@ async function testSDK() {
     );
     console.log("✅ Uploaded Asset:", JSON.stringify(uploadedAsset, null, 2));
 
-    // Test modifying asset tags
-    console.log("🔥 Modifying asset tags...");
-    const modifiedAsset = await sdk.assets.modifyAssetSettings(
+    // Test deleting the uploaded asset
+    console.log("🔥 Deleting uploaded asset...");
+    const deleteResult = await sdk.assets.deleteAssetById(
       uploadedAsset._id,
-      {
-        _id: uploadedAsset._id,
-        tags: ["test-tag", "sample-pdf"],
-      },
       teamId
     );
-    console.log("✅ Modified Asset Tags:", JSON.stringify(modifiedAsset, null, 2));
-
-    console.log("🔥 Creating website app asset...");
-    const websiteAppAsset = await sdk.assets.createWebsiteAppAsset(
-      {
-        url: "https://www.youtube.com/watch?v=Qan_OvBeUpc",
-        title: "YouTube",
-      },
-      teamId
-    );
-    console.log(
-      "✅ Created Website App Asset:",
-      JSON.stringify(websiteAppAsset, null, 2)
-    );
-
-    // Test modifying website asset settings
-    // console.log("🔥 Modifying website asset settings...");
-    // const modifiedAsset = await sdk.assets.modifyAssetSettings(
-    //   "RYb8h4PJEiTE278T",
-    //   {
-    //     _id: "RYb8h4PJEiTE278T",
-    //     path: "/A",
-    //   },
-    //   teamId
-    // );
-    // console.log(
-    //   "✅ Modified Website Asset:",
-    //   JSON.stringify(modifiedAsset, null, 2)
-    // );
+    console.log("✅ Asset deleted:", deleteResult);
   } catch (error) {
     console.error("❌ Error:", error);
   }
