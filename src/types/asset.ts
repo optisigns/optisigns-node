@@ -207,8 +207,8 @@ export interface CreateWebsiteAppAssetInput {
 }
 
 export interface ModifyAssetSettingsInput {
-  name?: string;
-  metadata?: Record<string, any>;
+  // name?: string;
+  metadata?: Partial<AssetInput>;
   // Add other settings as needed based on asset type
 }
 

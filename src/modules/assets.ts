@@ -1,15 +1,137 @@
 import { GraphQLClient } from "graphql-request";
 import {
   Asset,
-  AssetCategory,
-  UploadFileInput,
   CreateWebsiteAppAssetInput,
   ModifyAssetSettingsInput,
-  ScheduleAssetExpirationInput,
-  PushToScreensInput,
-  PushToScreensMutationInput,
-  Variables,
+  AssetInput,
 } from "../types/asset";
+
+const SAVE_ASSET_MUTATION = `
+  mutation saveAsset($payload: AssetInput!, $teamId: String) {
+    saveAsset(payload: $payload, teamId: $teamId) {
+      AWSS3ID
+      _id
+      accountId
+      advancedOptions
+      appType
+      assetMeta
+      assetRootId
+      bucket
+      changeContent
+      commonType
+      confidentLevel
+      createdAt
+      createdBy
+      currentAssetId
+      currentPlaylistId
+      currentScheduleId
+      delay
+      doc_pages
+      documentDuration
+      duration
+      durationPage
+      embedLink
+      engage
+      faceSize
+      fileExtension
+      fileSize
+      fileType
+      filename
+      framerate
+      groupId
+      height
+      iFrameAllow
+      isCaption
+      isDisable
+      isHide
+      isScheduleDefault
+      isSendDataOnly
+      kioskUrl
+      lastTeamId
+      lastUpdatedBy
+      lastUpdatedDate
+      leastDuration
+      meta
+      model
+      name
+      num_pages
+      oldRules
+      options
+      orientation
+      originalAWSS3ID
+      originalFileExtension
+      originalFileName
+      originalFileSize
+      path
+      placeGeometry
+      placeId
+      playbackType
+      playlistId
+      postsType
+      preloadKioskUrl
+      processId
+      refreshInterval
+      requestDesktopSite
+      restDuration
+      returnedUrl
+      rules
+      scale
+      screenZones {
+        currentAssetId
+        currentPlaylistId
+        currentScheduleId
+        currentSelectionDate
+        currentType
+        documentDuration
+        fitAsset
+        height
+        heightPixel
+        id
+        left
+        leftPixel
+        name
+        playbackType
+        scale
+        stretchAsset
+        top
+        topPixel
+        width
+        widthPixel
+      }
+      serviceType
+      shareTos
+      showTouchHereIcon
+      snapshotDuration
+      snapshotResolution
+      socialProfile
+      status
+      stretchAsset
+      subType
+      tags
+      targetURL
+      teamId
+      thumbnail
+      timeout
+      touchIconBlinkingRate
+      touchScreenIcon
+      touchScreenIconAssetId
+      touchScreenIconLocation
+      touchScreenIconSize
+      touchScreenIconUrl
+      touchScreenIconUrlDefault
+      type
+      updateDisplay
+      version
+      video_1080p
+      video_bitrate
+      video_codec
+      webLink
+      webType
+      width
+      youtubeType
+    }
+  }
+`;
 
 export class AssetsModule {
   constructor(private client: GraphQLClient) {}
@@ -65,8 +187,21 @@ export class AssetsModule {
       // Read and append file
       let file: Blob;
       let filename: string;
-      file = await fetch(filePath).then((r) => r.blob());
-      filename = filePath.split("/").pop() || "unknown";
+
+      // Check if filePath is a URL or local file path
+      if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+        file = await fetch(filePath).then((r) => r.blob());
+        filename = filePath.split("/").pop() || "unknown";
+      } else {
+        // Handle local file path
+        const fs = require('fs');
+        const path = require('path');
+        const absolutePath = path.resolve(filePath);
+        const buffer = fs.readFileSync(absolutePath);
+        file = new Blob([buffer]);
+        filename = path.basename(filePath);
+      }
+
       formData.append("file", file, filename);
 
       // Upload file
@@ -87,134 +222,7 @@ export class AssetsModule {
 
       const assembly = await uploadResponse.json();
 
-      // Create asset from uploaded file
-      const createAssetMutation = `
-        mutation saveAsset($payload: AssetInput!, $teamId: String) {
-          saveAsset(payload: $payload, teamId: $teamId) {
-            AWSS3ID
-            _id
-            accountId
-            advancedOptions
-            appType
-            assetMeta
-            assetRootId
-            bucket
-            changeContent
-            commonType
-            confidentLevel
-            createdAt
-            createdBy
-            currentAssetId
-            currentPlaylistId
-            currentScheduleId
-            delay
-            doc_pages
-            documentDuration
-            duration
-            durationPage
-            embedLink
-            engage
-            faceSize
-            fileExtension
-            fileSize
-            fileType
-            filename
-            framerate
-            groupId
-            height
-            iFrameAllow
-            isCaption
-            isDisable
-            isHide
-            isScheduleDefault
-            isSendDataOnly
-            kioskUrl
-            lastTeamId
-            lastUpdatedBy
-            lastUpdatedDate
-            leastDuration
-            meta
-            model
-            name
-            num_pages
-            oldRules
-            options
-            orientation
-            originalAWSS3ID
-            originalFileExtension
-            originalFileName
-            originalFileSize
-            path
-            placeGeometry
-            placeId
-            playbackType
-            playlistId
-            postsType
-            preloadKioskUrl
-            processId
-            refreshInterval
-            requestDesktopSite
-            restDuration
-            returnedUrl
-            rules
-            scale
-            screenZones {
-              currentAssetId
-              currentPlaylistId
-              currentScheduleId
-              currentSelectionDate
-              currentType
-              documentDuration
-              fitAsset
-              height
-              heightPixel
-              id
-              left
-              leftPixel
-              name
-              playbackType
-              scale
-              stretchAsset
-              top
-              topPixel
-              width
-              widthPixel
-            }
-            serviceType
-            shareTos
-            showTouchHereIcon
-            snapshotDuration
-            snapshotResolution
-            socialProfile
-            status
-            stretchAsset
-            subType
-            tags
-            targetURL
-            teamId
-            thumbnail
-            timeout
-            touchIconBlinkingRate
-            touchScreenIcon
-            touchScreenIconAssetId
-            touchScreenIconLocation
-            touchScreenIconSize
-            touchScreenIconUrl
-            touchScreenIconUrlDefault
-            type
-            updateDisplay
-            version
-            video_1080p
-            video_bitrate
-            video_codec
-            webLink
-            webType
-            width
-            youtubeType
-          }
-        }
-      `;
-
+      // Replace the duplicate mutation with SAVE_ASSET_MUTATION
       const uploadItem = assembly.uploads[0];
       const assetPayload = {
         type: "file",
@@ -224,7 +232,7 @@ export class AssetsModule {
         path: null,
       };
 
-      const response = (await this.client.request(createAssetMutation, {
+      const response = (await this.client.request(SAVE_ASSET_MUTATION, {
         teamId,
         payload: assetPayload,
       })) as {
@@ -233,6 +241,7 @@ export class AssetsModule {
 
       return response.saveAsset;
     } catch (error: any) {
+      console.error("Upload File Asset Error:", error);
       throw this.handleGraphQLError(error, "upload file asset");
     }
   }
@@ -245,138 +254,12 @@ export class AssetsModule {
     input: CreateWebsiteAppAssetInput,
     teamId: string
   ): Promise<Asset> {
-    const mutation = `
-      mutation saveAsset($payload: AssetInput!, $teamId: String) {
-        saveAsset(payload: $payload, teamId: $teamId) {
-          AWSS3ID
-          _id
-          accountId
-          advancedOptions
-          appType
-          assetMeta
-          assetRootId
-          bucket
-          changeContent
-          commonType
-          confidentLevel
-          createdAt
-          createdBy
-          currentAssetId
-          currentPlaylistId
-          currentScheduleId
-          delay
-          doc_pages
-          documentDuration
-          duration
-          durationPage
-          embedLink
-          engage
-          faceSize
-          fileExtension
-          fileSize
-          fileType
-          filename
-          framerate
-          groupId
-          height
-          iFrameAllow
-          isCaption
-          isDisable
-          isHide
-          isScheduleDefault
-          isSendDataOnly
-          kioskUrl
-          lastTeamId
-          lastUpdatedBy
-          lastUpdatedDate
-          leastDuration
-          meta
-          model
-          name
-          num_pages
-          oldRules
-          options
-          orientation
-          originalAWSS3ID
-          originalFileExtension
-          originalFileName
-          originalFileSize
-          path
-          placeGeometry
-          placeId
-          playbackType
-          playlistId
-          postsType
-          preloadKioskUrl
-          processId
-          refreshInterval
-          requestDesktopSite
-          restDuration
-          returnedUrl
-          rules
-          scale
-          screenZones {
-            currentAssetId
-            currentPlaylistId
-            currentScheduleId
-            currentSelectionDate
-            currentType
-            documentDuration
-            fitAsset
-            height
-            heightPixel
-            id
-            left
-            leftPixel
-            name
-            playbackType
-            scale
-            stretchAsset
-            top
-            topPixel
-            width
-            widthPixel
-          }
-          serviceType
-          shareTos
-          showTouchHereIcon
-          snapshotDuration
-          snapshotResolution
-          socialProfile
-          status
-          stretchAsset
-          subType
-          tags
-          targetURL
-          teamId
-          thumbnail
-          timeout
-          touchIconBlinkingRate
-          touchScreenIcon
-          touchScreenIconAssetId
-          touchScreenIconLocation
-          touchScreenIconSize
-          touchScreenIconUrl
-          touchScreenIconUrlDefault
-          type
-          updateDisplay
-          version
-          video_1080p
-          video_bitrate
-          video_codec
-          webLink
-          webType
-          width
-          youtubeType
-        }
-      }
-    `;
     try {
-      const response = (await this.client.request(mutation, {
+      const response = (await this.client.request(SAVE_ASSET_MUTATION, {
         teamId: teamId,
         payload: {
           type: "web",
-          subType: "static", 
+          subType: "static",
           path: null,
           webLink: input.url,
           originalFileName: input.title,
@@ -400,48 +283,32 @@ export class AssetsModule {
    */
   async modifyAssetSettings(
     id: string,
-    settings: ModifyAssetSettingsInput,
+    settings: Partial<AssetInput>,
     teamId?: string
   ): Promise<Asset> {
     // Determine asset type and call the appropriate private method
-    const assetDetail = await this.getAssetDetail(id, teamId);
-    if (assetDetail.type === "file") {
-      return this.modifyFileAssetSettings(id, settings, teamId);
-    } else if (assetDetail.type === "web") {
-      return this.modifyWebsiteAssetSettings(id, settings, teamId);
-    }
-    throw new Error(`Unsupported asset type: ${assetDetail.type}`);
+    // const assetDetail = await this.getAssetDetail(id, teamId);
+    return this.modifyFileAssetSettings(id, settings, teamId);
+    // if (assetDetail.type === "file") {
+    //   return this.modifyFileAssetSettings(id, settings, teamId);
+    // } else if (assetDetail.type === "web") {
+    //   return this.modifyWebsiteAssetSettings(id, settings, teamId);
+    // }
+    // throw new Error(`Unsupported asset type: ${assetDetail.type}`);
   }
 
   // Private method to modify file asset settings
   private async modifyFileAssetSettings(
     id: string,
-    settings: ModifyAssetSettingsInput,
+    settings: Partial<AssetInput>,
     teamId?: string
   ): Promise<Asset> {
-    const assetDetail = await this.getAssetDetail(id, teamId); // Get existing asset details
-    const mutation = `
-      mutation($teamId: String, $payload: SaveAssetInput!) {
-        saveAsset(teamId: $teamId, payload: $payload) {
-          _id
-          name
-          type
-          url
-          metadata
-          status
-          lastUpdatedDate
-          teamId
-          path
-        }
-      }
-    `;
-
+    // const assetDetail = await this.getAssetDetail(id, teamId); // Get existing asset details
     try {
-      const response = (await this.client.request(mutation, {
+      const response = (await this.client.request(SAVE_ASSET_MUTATION, {
         teamId: teamId,
         payload: {
-          ...assetDetail, // Spread existing asset details
-          ...settings, // Include new settings
+          ...settings,
         },
       })) as {
         saveAsset: Asset;
@@ -459,29 +326,13 @@ export class AssetsModule {
     settings: ModifyAssetSettingsInput,
     teamId?: string
   ): Promise<Asset> {
-    const assetDetail = await this.getAssetDetail(id, teamId); // Get existing asset details
-    const mutation = `
-      mutation($teamId: String, $payload: SaveAssetInput!) {
-        saveAsset(teamId: $teamId, payload: $payload) {
-          _id
-          name
-          type
-          url
-          metadata
-          status
-          lastUpdatedDate
-          teamId
-          path
-        }
-      }
-    `;
-
+    console.log("🔥 Modifying website asset settings:", settings);
+    // const assetDetail = await this.getAssetDetail(id, teamId); // Get existing asset details
     try {
-      const response = (await this.client.request(mutation, {
+      const response = (await this.client.request(SAVE_ASSET_MUTATION, {
         teamId: teamId,
         payload: {
-          ...assetDetail, // Spread existing asset details
-          ...settings, // Include new settings
+          ...settings,
         },
       })) as {
         saveAsset: Asset;
